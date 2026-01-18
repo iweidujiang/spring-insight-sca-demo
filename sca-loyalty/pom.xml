@@ -3,14 +3,14 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>spring-insight-sca-demo</artifactId>
         <groupId>io.github.iweidujiang</groupId>
+        <artifactId>spring-insight-sca-demo</artifactId>
         <version>1.0.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>sca-user</artifactId>
-    <name>SCA User</name>
+    <artifactId>sca-loyalty</artifactId>
+    <name>SCA Loyalty</name>
 
     <dependencies>
         <!-- Spring Boot Web -->
@@ -25,16 +25,15 @@
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
 
-        <!-- OpenFeign -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-openfeign</artifactId>
-        </dependency>
-
         <!-- Spring Insight -->
         <dependency>
             <groupId>io.github.iweidujiang</groupId>
             <artifactId>spring-insight-spring-boot-starter</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
         </dependency>
 
         <!-- 测试 -->

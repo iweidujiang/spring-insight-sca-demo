@@ -18,6 +18,7 @@
         <module>sca-order</module>
         <module>sca-product</module>
         <module>sca-user</module>
+        <module>sca-loyalty</module>
     </modules>
 
     <properties>
@@ -67,6 +68,14 @@
                 <groupId>io.github.iweidujiang</groupId>
                 <artifactId>spring-insight-spring-boot-starter</artifactId>
                 <version>${spring.insight.version}</version>
+            </dependency>
+
+            <!-- Lombok -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+                <scope>provided</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
