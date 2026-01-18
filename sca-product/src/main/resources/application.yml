@@ -10,7 +10,7 @@ spring:
     enabled: true
     service-name: sca-product
     datasource:
-      url: jdbc:mysql://localhost:3306/spring_insight?useSSL=false&serverTimezone=UTC
+      url: jdbc:mysql://localhost:3306/spring-insight?useSSL=false&serverTimezone=UTC
       username: root
       password: 123456
 
