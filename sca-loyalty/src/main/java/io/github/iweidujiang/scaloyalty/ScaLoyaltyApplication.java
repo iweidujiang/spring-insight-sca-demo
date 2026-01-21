@@ -1,6 +1,6 @@
 package io.github.iweidujiang.scaloyalty;
 
-import io.github.iweidujiang.springinsight.annotation.EnableSpringInsight;
+import io.github.iweidujiang.springinsight.agent.autoconfigure.EnableSpringInsight;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;

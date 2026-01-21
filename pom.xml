@@ -29,8 +29,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <lombok.version>1.18.30</lombok.version>
         <spring.boot.version>3.5.9</spring.boot.version>
-        <spring.cloud.version>2023.0.1</spring.cloud.version>
-        <spring.cloud.alibaba.version>2023.0.1.0</spring.cloud.alibaba.version>
+        <spring.cloud.version>2025.0.0</spring.cloud.version>
+        <spring.cloud.alibaba.version>2025.0.0.0</spring.cloud.alibaba.version>
         <spring.insight.version>0.1.0-SNAPSHOT</spring.insight.version>
     </properties>
 
