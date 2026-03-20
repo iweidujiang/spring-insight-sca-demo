@@ -45,7 +45,21 @@ GET http://localhost:8080/order/create?userId=1&productId=1
 docker compose up --build
 ```
 
-父目录下可放置 `.dockerignore`（已提供示例 `../.dockerignore`）以减小构建上下文。
+### 看起来「停在 Nacos 没有后续日志」？
+
+1. **正常现象**：Nacos 用现成镜像，**立刻**会有日志；其余 5 个服务要先 **Docker 构建**（镜像里跑 Maven，首次常 **5～20 分钟**）。构建阶段**还没有业务容器**，所以除了 Nacos 几乎看不到新日志，并不是死机。
+2. **推荐**：另开终端先看构建进度，再起容器：
+   ```powershell
+   cd spring-insight-sca-demo
+   $env:DOCKER_BUILDKIT=1; $env:BUILDKIT_PROGRESS="plain"; $env:COMPOSE_PARALLEL_LIMIT="1"
+   docker compose build
+   docker compose up
+   ```
+   或直接运行仓库里的 **`compose-up.ps1`**（会先 `build` 再 `up`）。
+3. **Nacos 未就绪**：`docker-compose.yml` 已为 Nacos 配置 **healthcheck**，业务服务会等 Nacos **就绪后再启动**，避免注册失败反复重启。
+4. 父目录下已有 **`.dockerignore`**（与 `spring-insight` 同级）以减小构建上下文。
+
+修改过 **父 `pom.xml`（如 Spring Boot repackage）** 后请重新构建镜像：`docker compose build --no-cache` 或至少 `docker compose build`。
 
 - Nacos：<http://localhost:8848/nacos>（默认账号密码均为 `nacos`）
 - 网关（含 Insight UI）：<http://localhost:8080/>
