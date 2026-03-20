@@ -6,23 +6,16 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 /**
- * ┌───────────────────────────────────────────────
- * │ 📦 用户服务 RPC
- * │
- * │ 👤 作者：苏渡苇
- * │ 🔗 微信公众号：苏渡苇
- * │ 💻 GitHub：https://github.com/iweidujiang
- * │ 📅 @since：2026/1/18
- * └───────────────────────────────────────────────
+ * 调用用户服务（sca-user），路径与 {@code UserController} 一致。
  */
 @FeignClient("sca-user")
 public interface UserFeignClient {
 
-    @GetMapping("/score/{id}")
+    @GetMapping("/user/score/{id}")
     Integer getScore(@PathVariable("id") Long id);
 
-    @GetMapping("/addScore")
+    @GetMapping("/user/addScore")
     Integer addScore(@RequestParam Long id,
-                            @RequestParam Integer lastScore,
-                            @RequestParam Integer addScore);
+                     @RequestParam Integer lastScore,
+                     @RequestParam Integer addScore);
 }

@@ -1,0 +1,10 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: nacos:8848
+  insight:
+    diagnostic-logs: false
+
+server:
+  address: 0.0.0.0

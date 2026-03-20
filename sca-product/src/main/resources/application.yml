@@ -5,15 +5,9 @@ spring:
     nacos:
       discovery:
         server-addr: localhost:8848
-        namespace: 93d3606d-ee6b-4cf9-9580-ed9844ba4bca
-  # Spring Insight配置
   insight:
     enabled: true
     service-name: sca-product
-    datasource:
-      url: jdbc:mysql://localhost:3306/spring-insight?useSSL=false&serverTimezone=UTC
-      username: root
-      password: 111111
 
 server:
   port: 8082

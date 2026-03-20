@@ -37,7 +37,7 @@ public class OrderController {
         log.info("获得 price={}", price);
         // 用户服务-查询当前积分，增加积分
         Integer currentScore = userFeignClient.getScore(userId);
-        log.info("获得 currentScore={}", price);
+        log.info("获得 currentScore={}", currentScore);
         // 增加积分
         Integer addScore = price.intValue();
         Integer finalScore = userFeignClient.addScore(userId, currentScore, addScore);
