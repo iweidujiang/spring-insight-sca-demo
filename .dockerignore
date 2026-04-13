@@ -1,5 +1,11 @@
-**/target
+# 保留各模块 target/*.jar 供 Dockerfile COPY；排除体积大且无用的内容以加快 docker build 传上下文
 .git
 .idea
 *.iml
 **/.DS_Store
+**/target/classes/**
+**/target/test-classes/**
+**/target/maven-status/**
+**/target/surefire-reports/**
+**/target/*.original
+**/target/*.jar.original

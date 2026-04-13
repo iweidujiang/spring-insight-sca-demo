@@ -1,14 +1,13 @@
-# 一键启动本目录下 Docker Compose（SCA 各服务 + 压测 traffic；Nacos 需已在外部启动）
-# 前置：spring-insight 已 mvn install；Nacos 容器 nacos-standalone 已在网络 my-network 上运行
-# 用法: .\compose-up.ps1   或   .\compose-up.ps1 -d
+# 一键：本机 Maven 打包（若缺 jar）+ Docker 构建镜像（仅 COPY jar，秒级）+ compose up
+# Nacos 需已在外部启动并接入 DOCKER_NETWORK（默认 my-network）
 param(
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$ComposeArgs
 )
 $ErrorActionPreference = "Stop"
 $here = $PSScriptRoot
+Set-Location $here
 
-# 先读取本目录 .env（与 docker compose 行为一致，便于配置 MAVEN_LOCAL_REPOSITORY=D:/java/mvn_repo）
 $envFile = Join-Path $here ".env"
 if (Test-Path $envFile) {
     Get-Content $envFile | ForEach-Object {
@@ -18,38 +17,29 @@ if (Test-Path $envFile) {
         if ($eq -lt 1) { return }
         $key = $line.Substring(0, $eq).Trim()
         $val = $line.Substring($eq + 1).Trim().Trim('"')
-        switch ($key) {
-            "MAVEN_LOCAL_REPOSITORY" { $env:MAVEN_LOCAL_REPOSITORY = $val }
-            "LOCAL_M2_REPOSITORY" { $env:LOCAL_M2_REPOSITORY = $val }
-            "DOCKER_NETWORK" { $env:DOCKER_NETWORK = $val }
-        }
+        if ($key -eq "DOCKER_NETWORK") { $env:DOCKER_NETWORK = $val }
     }
 }
+if (-not $env:DOCKER_NETWORK) { $env:DOCKER_NETWORK = "my-network" }
 
-# Maven 本地库：优先 MAVEN_LOCAL_REPOSITORY，其次兼容 LOCAL_M2_REPOSITORY，最后默认 ~/.m2/repository
-if (-not $env:MAVEN_LOCAL_REPOSITORY) {
-    if ($env:LOCAL_M2_REPOSITORY) {
-        $env:MAVEN_LOCAL_REPOSITORY = $env:LOCAL_M2_REPOSITORY
-    } else {
-        $env:MAVEN_LOCAL_REPOSITORY = (Join-Path $env:USERPROFILE ".m2\repository")
-    }
+$requiredJars = @(
+    "sca-gateway/target/sca-gateway-1.0.0-SNAPSHOT.jar",
+    "sca-order/target/sca-order-1.0.0-SNAPSHOT.jar",
+    "sca-user/target/sca-user-1.0.0-SNAPSHOT.jar",
+    "sca-product/target/sca-product-1.0.0-SNAPSHOT.jar",
+    "sca-loyalty/target/sca-loyalty-1.0.0-SNAPSHOT.jar"
+)
+$missing = @()
+foreach ($rel in $requiredJars) {
+    if (-not (Test-Path (Join-Path $here $rel))) { $missing += $rel }
 }
-if (-not $env:DOCKER_NETWORK) {
-    $env:DOCKER_NETWORK = "my-network"
-}
-
-$m2 = $env:MAVEN_LOCAL_REPOSITORY
-if (-not (Test-Path $m2)) {
-    Write-Error "[compose-up] Maven 本地库路径不存在: $m2 （请检查 .env 中 MAVEN_LOCAL_REPOSITORY 或 settings.xml localRepository）"
-}
-$insightPath = Join-Path $m2 "io\github\iweidujiang"
-if (-not (Test-Path $insightPath)) {
-    Write-Warning "[compose-up] 未找到 $insightPath ，请在 spring-insight 目录执行 mvn install -DskipTests"
-} else {
-    Write-Host "[compose-up] MAVEN_LOCAL_REPOSITORY=$m2 （已检测到 io/github/iweidujiang）"
+if ($missing.Count -gt 0) {
+    Write-Host "[compose-up] 缺少可运行 jar，将使用本机 Maven Wrapper 打包（走你的 settings.xml / 本地库，如 D:/java/mvn_repo）…"
+    $mvnw = Join-Path $here "mvnw.cmd"
+    if (-not (Test-Path $mvnw)) { Write-Error "[compose-up] 未找到 mvnw.cmd" }
+    & $mvnw -B -ntp clean package -DskipTests
 }
 
-# 若网络不存在则创建（与 nacos --network my-network 对齐）
 docker network inspect $env:DOCKER_NETWORK 2>$null | Out-Null
 if (-not $?) {
     Write-Host "[compose-up] 创建 Docker 网络: $($env:DOCKER_NETWORK)"
@@ -58,7 +48,8 @@ if (-not $?) {
 
 $env:DOCKER_BUILDKIT = "1"
 if (-not $env:BUILDKIT_PROGRESS) { $env:BUILDKIT_PROGRESS = "plain" }
-if (-not $env:COMPOSE_PARALLEL_LIMIT) { $env:COMPOSE_PARALLEL_LIMIT = "1" }
+# 镜像构建已很轻，可并行；若需串行可设 COMPOSE_PARALLEL_LIMIT=1
+if (-not $env:COMPOSE_PARALLEL_LIMIT) { $env:COMPOSE_PARALLEL_LIMIT = "5" }
 
-Write-Host "[compose-up] 首次构建若曾失败，建议: docker compose build --no-cache"
+Write-Host "[compose-up] Docker 仅复制已打好的 jar，构建应很快；正在 compose up --build …"
 & docker compose up --build @ComposeArgs

@@ -1,22 +1,13 @@
-# 仅启动本 demo 各服务 + 压测 traffic，不包含 Nacos（请在本机先启动 nacos-standalone）。
+# 仅启动本 demo 各服务 + 压测 traffic；Nacos 请在本机另行启动（如 nacos-standalone @ my-network）。
 #
-# 所有服务加入外部网络 DOCKER_NETWORK（默认 my-network），与已运行的 Nacos 同网，
-# 以便通过主机名 nacos-standalone:8848 注册发现（见各模块 application-docker.yml）。
-#
-# 前置：已在 spring-insight 父工程执行 mvn clean install -DskipTests；本机已有 Docker 网络
-#（默认名 my-network）且 Nacos 容器已接入该网络。
-#
-# 需 Docker Compose v2.17+（additional_contexts）与 BuildKit。
-# 网关 http://localhost:8080/ ；Nacos 控制台由你本机 nacos 容器映射（如 38848）
+# 镜像构建极轻量：仅 COPY 各模块已打好的 fat jar（须先在项目根执行 mvnw package，compose-up 可自动执行）。
+# 不再在 Docker 内跑 Maven，避免长时间「卡住」。
 #
 name: spring-insight-sca-demo
 
 x-sca-build: &sca-build
   context: .
   dockerfile: Dockerfile
-  additional_contexts:
-    # 与 Maven settings.xml 中 <localRepository> 一致（含 io、org 的根目录）；由 compose-up 脚本或 .env 设置 MAVEN_LOCAL_REPOSITORY
-    local_m2: ${MAVEN_LOCAL_REPOSITORY}
 
 services:
   sca-product:
