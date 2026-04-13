@@ -87,7 +87,7 @@ $env:DOCKER_BUILDKIT = "1"
 docker compose up --build
 ```
 
-也可复制 **`.env.example`** 为 **`.env`**，填写 **`MAVEN_LOCAL_REPOSITORY`**（及按需 `DOCKER_NETWORK`）。未设置时 compose 会尝试用脚本默认路径；自定义仓库**不要依赖默认**，务必配置。
+也可复制 **`.env.example`** 为 **`.env`**，填写 **`MAVEN_LOCAL_REPOSITORY`**（例如 `D:/java/mvn_repo`）及按需 **`DOCKER_NETWORK`**。**`compose-up.ps1` 会先读取 `.env`** 再启动 Compose。若曾构建失败，修复 Dockerfile 后请执行 **`docker compose build --no-cache`** 以免沿用错误缓存层。
 
 ### 构建较慢、日志很少？
 

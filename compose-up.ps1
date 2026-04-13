@@ -6,8 +6,26 @@ param(
     [string[]]$ComposeArgs
 )
 $ErrorActionPreference = "Stop"
-Write-Host "[compose-up] 首次构建会较慢：Maven 需下载依赖，日志中会出现下载进度；未使用 -q 静默。"
-Write-Host "[compose-up] 默认 COMPOSE_PARALLEL_LIMIT=1（串行构建镜像，日志更清晰）；可设置环境变量改为并行以加速。"
+$here = $PSScriptRoot
+
+# 先读取本目录 .env（与 docker compose 行为一致，便于配置 MAVEN_LOCAL_REPOSITORY=D:/java/mvn_repo）
+$envFile = Join-Path $here ".env"
+if (Test-Path $envFile) {
+    Get-Content $envFile | ForEach-Object {
+        $line = $_.Trim()
+        if ($line -eq "" -or $line.StartsWith("#")) { return }
+        $eq = $line.IndexOf("=")
+        if ($eq -lt 1) { return }
+        $key = $line.Substring(0, $eq).Trim()
+        $val = $line.Substring($eq + 1).Trim().Trim('"')
+        switch ($key) {
+            "MAVEN_LOCAL_REPOSITORY" { $env:MAVEN_LOCAL_REPOSITORY = $val }
+            "LOCAL_M2_REPOSITORY" { $env:LOCAL_M2_REPOSITORY = $val }
+            "DOCKER_NETWORK" { $env:DOCKER_NETWORK = $val }
+        }
+    }
+}
+
 # Maven 本地库：优先 MAVEN_LOCAL_REPOSITORY，其次兼容 LOCAL_M2_REPOSITORY，最后默认 ~/.m2/repository
 if (-not $env:MAVEN_LOCAL_REPOSITORY) {
     if ($env:LOCAL_M2_REPOSITORY) {
@@ -19,15 +37,28 @@ if (-not $env:MAVEN_LOCAL_REPOSITORY) {
 if (-not $env:DOCKER_NETWORK) {
     $env:DOCKER_NETWORK = "my-network"
 }
+
+$m2 = $env:MAVEN_LOCAL_REPOSITORY
+if (-not (Test-Path $m2)) {
+    Write-Error "[compose-up] Maven 本地库路径不存在: $m2 （请检查 .env 中 MAVEN_LOCAL_REPOSITORY 或 settings.xml localRepository）"
+}
+$insightPath = Join-Path $m2 "io\github\iweidujiang"
+if (-not (Test-Path $insightPath)) {
+    Write-Warning "[compose-up] 未找到 $insightPath ，请在 spring-insight 目录执行 mvn install -DskipTests"
+} else {
+    Write-Host "[compose-up] MAVEN_LOCAL_REPOSITORY=$m2 （已检测到 io/github/iweidujiang）"
+}
+
 # 若网络不存在则创建（与 nacos --network my-network 对齐）
 docker network inspect $env:DOCKER_NETWORK 2>$null | Out-Null
 if (-not $?) {
     Write-Host "[compose-up] 创建 Docker 网络: $($env:DOCKER_NETWORK)"
     docker network create $env:DOCKER_NETWORK
 }
+
 $env:DOCKER_BUILDKIT = "1"
-# 构建阶段输出完整日志（避免 BuildKit 折叠导致「像卡住」）
 if (-not $env:BUILDKIT_PROGRESS) { $env:BUILDKIT_PROGRESS = "plain" }
-# 默认串行构建各服务镜像，避免 5 个 Maven 同时跑占满 CPU/带宽、且均无输出
 if (-not $env:COMPOSE_PARALLEL_LIMIT) { $env:COMPOSE_PARALLEL_LIMIT = "1" }
+
+Write-Host "[compose-up] 首次构建若曾失败，建议: docker compose build --no-cache"
 & docker compose up --build @ComposeArgs
