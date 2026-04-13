@@ -4,14 +4,14 @@ Spring Cloud Alibaba（Nacos）多服务演示工程，用于本地压测 **Spri
 
 ## 服务说明
 
-| 模块 | 端口（本地） | 说明 |
-|------|-------------|------|
-| sca-gateway | 8080 | Spring Cloud Gateway + **Spring Insight UI** |
-| sca-order | 8081 | 下单：Feign 调用 user、product |
-| sca-product | 8082 | 商品价格 |
-| sca-user | 8083 | 用户：Feign 调用 loyalty |
-| sca-loyalty | 8084 | 积分 |
-| Nacos | 见下 | 注册中心（**由你本机单独用 Docker 启动**，本仓库的 compose **不包含** Nacos） |
+| 模块 | 端口（本地） | 说明                                                                |
+|------|-------------|-------------------------------------------------------------------|
+| sca-gateway | 8080 | Spring Cloud Gateway + **Spring Insight UI**                      |
+| sca-order | 8081 | 下单：Feign 调用 user、product                                          |
+| sca-product | 8082 | 商品价格                                                              |
+| sca-user | 8083 | 用户：Feign 调用 loyalty                                               |
+| sca-loyalty | 8084 | 积分                                                                |
+| Nacos | 见下 | 注册中心（**我在本机测试环境单独用 Docker 启动了 Nacos**，本仓库的 compose **不包含** Nacos） |
 
 **Nacos（本机 Docker，与业务配置对齐）**
 
@@ -38,7 +38,7 @@ Spring Cloud Alibaba（Nacos）多服务演示工程，用于本地压测 **Spri
      -p 38080:8080 -p 38848:8848 -p 39848:9848 -d nacos/nacos-server:v3.1.1
    ```
 
-3. 若 `spring-insight-spring-boot-starter` 尚未从 **Maven Central** 解析到，在 **`spring-insight` 父工程**执行 `mvn clean install -DskipTests`。说明见 [`spring-insight/README.md`](../spring-insight/README.md#0-安装到本机-maven-仓库)。
+3. 在 **`spring-insight` 父工程**执行 `mvn clean install -DskipTests`。说明见 [`spring-insight/README.md`](../spring-insight/README.md#0-安装到本机-maven-仓库)。
 4. 按依赖顺序启动各 `*Application`（或先起 product、loyalty，再起 user、order，最后 gateway）。
 
 手动造流量示例：
@@ -76,18 +76,18 @@ GET http://localhost:8080/order/create?userId=1&productId=1
   ./compose-up.sh
   ```
 
-脚本会：默认设置 `LOCAL_M2_REPOSITORY`、`DOCKER_NETWORK=my-network`（若未设置），必要时创建 `my-network`，再执行 `docker compose up --build`。
+脚本会：解析 **Maven 本地库路径**（环境变量 **`MAVEN_LOCAL_REPOSITORY`**，与 `settings.xml` 里 `<localRepository>` 一致；若未设置则兼容旧名 **`LOCAL_M2_REPOSITORY`**，再回退到默认 `~/.m2/repository`）、设置 `DOCKER_NETWORK=my-network`（若未设置），必要时创建 `my-network`，再执行 `docker compose up --build`。若你使用自定义仓库路径（例如 `D:\Java\mvn_repo`），请在 **`.env`** 或环境中设置 `MAVEN_LOCAL_REPOSITORY=D:/Java/mvn_repo`（建议正斜杠）。
 
 ### 直接使用 docker compose
 
 ```powershell
-$env:LOCAL_M2_REPOSITORY = "$env:USERPROFILE\.m2\repository"
+$env:MAVEN_LOCAL_REPOSITORY = "D:/Java/mvn_repo"   # 与 settings.xml 中 localRepository 一致时必填
 $env:DOCKER_NETWORK = "my-network"
 $env:DOCKER_BUILDKIT = "1"
 docker compose up --build
 ```
 
-也可复制 **`.env.example`** 为 **`.env`** 填写 `LOCAL_M2_REPOSITORY` 与 `DOCKER_NETWORK`。
+也可复制 **`.env.example`** 为 **`.env`**，填写 **`MAVEN_LOCAL_REPOSITORY`**（及按需 `DOCKER_NETWORK`）。未设置时 compose 会尝试用脚本默认路径；自定义仓库**不要依赖默认**，务必配置。
 
 ### 构建较慢、日志很少？
 

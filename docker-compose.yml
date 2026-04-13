@@ -15,7 +15,8 @@ x-sca-build: &sca-build
   context: .
   dockerfile: Dockerfile
   additional_contexts:
-    local_m2: ${LOCAL_M2_REPOSITORY}
+    # 与 Maven settings.xml 中 <localRepository> 一致（含 io、org 的根目录）；由 compose-up 脚本或 .env 设置 MAVEN_LOCAL_REPOSITORY
+    local_m2: ${MAVEN_LOCAL_REPOSITORY}
 
 services:
   sca-product:

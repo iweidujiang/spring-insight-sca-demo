@@ -4,7 +4,7 @@
 # additional_context「local_m2」把本机 ~/.m2/repository 中的 io/github/iweidujiang 拷入镜像，
 # 再仅编译本 demo（不在镜像内编译 Spring Insight 源码）。
 #
-# 构建示例（需已设置 LOCAL_M2_REPOSITORY，见 compose-up.ps1 / compose-up.sh）:
+# 构建示例（需已通过 Compose 注入 MAVEN_LOCAL_REPOSITORY / LOCAL_M2_REPOSITORY，见 compose-up 脚本）:
 #   docker build -f Dockerfile --target gateway .
 
 FROM maven:3.9.9-eclipse-temurin-21-alpine AS build

@@ -6,8 +6,13 @@ param(
     [string[]]$ComposeArgs
 )
 $ErrorActionPreference = "Stop"
-if (-not $env:LOCAL_M2_REPOSITORY) {
-    $env:LOCAL_M2_REPOSITORY = (Join-Path $env:USERPROFILE ".m2\repository")
+# Maven 本地库：优先 MAVEN_LOCAL_REPOSITORY，其次兼容 LOCAL_M2_REPOSITORY，最后默认 ~/.m2/repository
+if (-not $env:MAVEN_LOCAL_REPOSITORY) {
+    if ($env:LOCAL_M2_REPOSITORY) {
+        $env:MAVEN_LOCAL_REPOSITORY = $env:LOCAL_M2_REPOSITORY
+    } else {
+        $env:MAVEN_LOCAL_REPOSITORY = (Join-Path $env:USERPROFILE ".m2\repository")
+    }
 }
 if (-not $env:DOCKER_NETWORK) {
     $env:DOCKER_NETWORK = "my-network"
