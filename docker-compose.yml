@@ -1,26 +1,24 @@
-# Spring Cloud Alibaba 演示栈 + Nacos + 周期性压测流量（curl）
+# 本地联调：Nacos + 全部 SCA 服务 + 周期性 curl 压测。
 #
-# 在 本文件所在目录 执行: docker compose up --build
-# 构建上下文为上级目录，需与 spring-insight 仓库同级（见 Dockerfile）
+# 前置：已在 spring-insight 父工程执行 mvn clean install -DskipTests（Starter 在本机 ~/.m2）。
+# 推荐一条命令：.\compose-up.ps1（Windows）或 bash compose-up.sh（macOS/Linux），
+# 脚本会设置 LOCAL_M2_REPOSITORY 并启用 BuildKit。
 #
-# 【重要】首次 up --build 时，Nacos 会马上有日志；其余 5 个服务要先「构建镜像」
-# （镜像内 Maven 编译 spring-insight + 全部模块，常需 5～20 分钟），这段时间默认几乎无新日志。
-# 建议另开终端执行（可看编译进度）:
-#   set DOCKER_BUILDKIT=1
-#   set BUILDKIT_PROGRESS=plain
-#   docker compose build
-# 再执行: docker compose up
-# 或限制并行构建避免内存吃满: set COMPOSE_PARALLEL_LIMIT=1
+# 需 Docker Compose v2.17+（additional_contexts）与 BuildKit。
+# 网关控制台 http://localhost:8080/ ；Nacos 控制台 http://localhost:38848/nacos （nacos/nacos）
+# 与本地单独启动的 Nacos 容器对齐：容器名 nacos-standalone，端口 38080:8080、38848:8848、39848:9848
 #
-# 控制台：http://localhost:8080/   Nacos：http://localhost:8848/nacos （nacos/nacos）
 name: spring-insight-sca-demo
 
 x-sca-build: &sca-build
-  context: ..
-  dockerfile: spring-insight-sca-demo/Dockerfile
+  context: .
+  dockerfile: Dockerfile
+  additional_contexts:
+    local_m2: ${LOCAL_M2_REPOSITORY}
 
 services:
   nacos:
+    container_name: nacos-standalone
     image: nacos/nacos-server:v2.3.2
     environment:
       MODE: standalone
@@ -28,11 +26,11 @@ services:
       JVM_XMS: 256m
       JVM_XMX: 512m
     ports:
-      - "8848:8848"
-      - "9848:9848"
+      - "38080:8080"
+      - "38848:8848"
+      - "39848:9848"
     networks: [sca]
     healthcheck:
-      # 官方镜像含 curl；若本机镜像异常可暂时注释 healthcheck
       test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8848/nacos/v1/console/health/readiness >/dev/null || exit 1"]
       interval: 5s
       timeout: 5s
@@ -109,7 +107,6 @@ services:
     depends_on:
       sca-gateway:
         condition: service_started
-    # 必须让整段脚本作为 sh -c 的「一个」参数，否则会变成 sleep 收到多余参数而报错
     command:
       - sh
       - -c

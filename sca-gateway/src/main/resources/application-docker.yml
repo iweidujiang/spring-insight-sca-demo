@@ -1,9 +1,9 @@
-# Docker 内使用服务名访问 Nacos
+# Docker 内通过容器名访问 Nacos（与 compose 中 container_name: nacos-standalone 一致）
 spring:
   cloud:
     nacos:
       discovery:
-        server-addr: nacos:8848
+        server-addr: nacos-standalone:8848
   insight:
     diagnostic-logs: false
 

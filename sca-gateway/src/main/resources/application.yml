@@ -4,7 +4,8 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
+        # 本地：连接宿主机已映射的 Nacos（与 docker-compose 中 38848:8848 一致）
+        server-addr: 127.0.0.1:38848
     gateway:
       routes:
         - id: order-service
