@@ -91,9 +91,9 @@ docker compose up --build
 
 ### 构建较慢、日志很少？
 
-1. 首次 **`docker compose build`** 会编译各服务镜像，可能需**数分钟**。
-2. 想看编译过程：`$env:DOCKER_BUILDKIT=1; $env:BUILDKIT_PROGRESS="plain"; docker compose build`
-3. 内存紧张：`$env:COMPOSE_PARALLEL_LIMIT=1` 后再 `docker compose build`。
+1. 首次构建时 Maven 会从网络**下载大量依赖**，可能持续**数分钟甚至更久**，属正常现象；旧版 Dockerfile 使用 `mvn -q` 会**完全不打印进度**，看起来像卡住——当前已改为输出下载日志。
+2. **`compose-up.ps1` / `compose-up.sh`** 默认设置 **`BUILDKIT_PROGRESS=plain`**（完整构建日志）和 **`COMPOSE_PARALLEL_LIMIT=1`**（串行构建各服务镜像，避免五个 Maven 同时跑占满资源且难以排查）。若要并行加速可设：`$env:COMPOSE_PARALLEL_LIMIT=5`（PowerShell）。
+3. 手动构建：`$env:DOCKER_BUILDKIT=1; $env:BUILDKIT_PROGRESS="plain"; docker compose build`
 
 ### 访问地址
 

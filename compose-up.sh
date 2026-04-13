@@ -6,6 +6,9 @@ set -euo pipefail
 export MAVEN_LOCAL_REPOSITORY="${MAVEN_LOCAL_REPOSITORY:-${LOCAL_M2_REPOSITORY:-$HOME/.m2/repository}}"
 export DOCKER_NETWORK="${DOCKER_NETWORK:-my-network}"
 export DOCKER_BUILDKIT=1
+export BUILDKIT_PROGRESS="${BUILDKIT_PROGRESS:-plain}"
+export COMPOSE_PARALLEL_LIMIT="${COMPOSE_PARALLEL_LIMIT:-1}"
+echo "[compose-up] 首次构建较慢，Maven 会打印下载进度；COMPOSE_PARALLEL_LIMIT=${COMPOSE_PARALLEL_LIMIT}"
 if ! docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1; then
   echo "[compose-up] 创建 Docker 网络: $DOCKER_NETWORK"
   docker network create "$DOCKER_NETWORK"

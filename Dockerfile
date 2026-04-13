@@ -19,8 +19,10 @@ COPY sca-user/pom.xml sca-user/
 COPY sca-product/pom.xml sca-product/
 COPY sca-loyalty/pom.xml sca-loyalty/
 
+# 不使用 -q，便于构建日志中看到 Maven 下载进度（否则长时间无输出像「卡住」）
 RUN --mount=type=cache,target=/root/.m2/repository \
-    mvn -B -q -ntp -f pom.xml dependency:go-offline -DskipTests
+    echo "[spring-insight-sca-demo] 解析依赖中（首次构建需从网络拉取大量 jar，可能持续数分钟）…" && \
+    mvn -B -ntp -f pom.xml dependency:resolve -DskipTests
 
 COPY sca-gateway/src sca-gateway/src
 COPY sca-order/src sca-order/src
@@ -29,7 +31,8 @@ COPY sca-product/src sca-product/src
 COPY sca-loyalty/src sca-loyalty/src
 
 RUN --mount=type=cache,target=/root/.m2/repository \
-    mvn -B -q -ntp -f pom.xml clean package -DskipTests
+    echo "[spring-insight-sca-demo] 打包各模块…" && \
+    mvn -B -ntp -f pom.xml clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine AS gateway
 WORKDIR /app
