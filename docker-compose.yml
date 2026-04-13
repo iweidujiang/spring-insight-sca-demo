@@ -1,12 +1,13 @@
-# 本地联调：Nacos + 全部 SCA 服务 + 周期性 curl 压测。
+# 仅启动本 demo 各服务 + 压测 traffic，不包含 Nacos（请在本机先启动 nacos-standalone）。
 #
-# 前置：已在 spring-insight 父工程执行 mvn clean install -DskipTests（Starter 在本机 ~/.m2）。
-# 推荐一条命令：.\compose-up.ps1（Windows）或 bash compose-up.sh（macOS/Linux），
-# 脚本会设置 LOCAL_M2_REPOSITORY 并启用 BuildKit。
+# 所有服务加入外部网络 DOCKER_NETWORK（默认 my-network），与已运行的 Nacos 同网，
+# 以便通过主机名 nacos-standalone:8848 注册发现（见各模块 application-docker.yml）。
+#
+# 前置：已在 spring-insight 父工程执行 mvn clean install -DskipTests；本机已有 Docker 网络
+#（默认名 my-network）且 Nacos 容器已接入该网络。
 #
 # 需 Docker Compose v2.17+（additional_contexts）与 BuildKit。
-# 网关控制台 http://localhost:8080/ ；Nacos 控制台 http://localhost:38848/nacos （nacos/nacos）
-# 与本地单独启动的 Nacos 容器对齐：容器名 nacos-standalone，端口 38080:8080、38848:8848、39848:9848
+# 网关 http://localhost:8080/ ；Nacos 控制台由你本机 nacos 容器映射（如 38848）
 #
 name: spring-insight-sca-demo
 
@@ -17,35 +18,12 @@ x-sca-build: &sca-build
     local_m2: ${LOCAL_M2_REPOSITORY}
 
 services:
-  nacos:
-    container_name: nacos-standalone
-    image: nacos/nacos-server:v2.3.2
-    environment:
-      MODE: standalone
-      PREFER_HOST_MODE: hostname
-      JVM_XMS: 256m
-      JVM_XMX: 512m
-    ports:
-      - "38080:8080"
-      - "38848:8848"
-      - "39848:9848"
-    networks: [sca]
-    healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8848/nacos/v1/console/health/readiness >/dev/null || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 36
-      start_period: 90s
-
   sca-product:
     build:
       <<: *sca-build
       target: product
     environment:
       SPRING_PROFILES_ACTIVE: docker
-    depends_on:
-      nacos:
-        condition: service_healthy
     networks: [sca]
 
   sca-loyalty:
@@ -54,9 +32,6 @@ services:
       target: loyalty
     environment:
       SPRING_PROFILES_ACTIVE: docker
-    depends_on:
-      nacos:
-        condition: service_healthy
     networks: [sca]
 
   sca-user:
@@ -66,8 +41,6 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      nacos:
-        condition: service_healthy
       sca-loyalty:
         condition: service_started
     networks: [sca]
@@ -79,8 +52,6 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      nacos:
-        condition: service_healthy
       sca-user:
         condition: service_started
       sca-product:
@@ -96,8 +67,6 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
-      nacos:
-        condition: service_healthy
       sca-order:
         condition: service_started
     networks: [sca]
@@ -121,4 +90,5 @@ services:
 
 networks:
   sca:
-    driver: bridge
+    name: ${DOCKER_NETWORK:-my-network}
+    external: true
