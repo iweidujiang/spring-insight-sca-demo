@@ -18,7 +18,7 @@
 
 | 模块 | 端口 | 说明 |
 |------|------|------|
-| sca-gateway | 8080 | Spring Cloud Gateway；Insight 使用 WebFlux 采集入口请求 |
+| sca-gateway | 8080 | Spring Cloud Gateway；路由使用 `lb://` 时需依赖 **`spring-cloud-starter-loadbalancer`**；Insight 使用 WebFlux 采集入口请求 |
 | sca-order | 8081 | 下单、OpenFeign；**Insight 控制台与 `/api/v1/**` 控制台 API** |
 | sca-product | 8082 | 商品价格 |
 | sca-user | 8083 | 用户；Feign 调用 loyalty |
@@ -80,6 +80,8 @@ BASE_URL=http://localhost:8080 ./scripts/smoke-traffic.sh 80
 ```
 
 默认请求：`GET {网关}/order/create?userId=1&productId=1`（经网关会走 product、user、loyalty 等调用）。随后在控制台查看 **链路 / 拓扑**。
+
+若脚本报 **HTTP 503**：先确认网关已引入 **`spring-cloud-starter-loadbalancer`**（`lb://` 路由依赖它；仅有 Nacos 注册信息不够）。脚本会先等待并对 503 重试；若仍失败再核对 Nacos 中 **`sca-order`** 实例与健康状态。
 
 ### 业务路由（经网关）
 

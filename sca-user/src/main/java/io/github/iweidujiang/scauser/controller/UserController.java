@@ -27,9 +27,9 @@ public class UserController {
     }
 
     @GetMapping("/addScore")
-    public Integer addScore(@RequestParam Long id,
-                            @RequestParam Integer lastScore,
-                            @RequestParam Integer addScore) {
+    public Integer addScore(@RequestParam("id") Long id,
+                            @RequestParam("lastScore") Integer lastScore,
+                            @RequestParam("addScore") Integer addScore) {
         return loyaltyFeignClient.addScore(id, lastScore, addScore);
     }
 

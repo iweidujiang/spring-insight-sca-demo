@@ -25,6 +25,12 @@
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
 
+        <!-- lb:// 路由解析实例列表必需（与 Nacos 是否已有数据无关；无此依赖时常表现为 503） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+
         <!-- Spring Insight：WebFlux 宿主排除 MVC 版收集器与 Tomcat；insight-collector-service 仍由 Starter 引入 -->
         <dependency>
             <groupId>io.github.iweidujiang</groupId>
