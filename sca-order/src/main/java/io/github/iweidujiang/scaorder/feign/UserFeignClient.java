@@ -15,7 +15,7 @@ public interface UserFeignClient {
     Integer getScore(@PathVariable("id") Long id);
 
     @GetMapping("/user/addScore")
-    Integer addScore(@RequestParam Long id,
-                     @RequestParam Integer lastScore,
-                     @RequestParam Integer addScore);
+    Integer addScore(@RequestParam("id") Long id,
+                     @RequestParam("lastScore") Integer lastScore,
+                     @RequestParam("addScore") Integer addScore);
 }
