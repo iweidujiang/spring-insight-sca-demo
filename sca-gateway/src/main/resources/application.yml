@@ -9,23 +9,25 @@ spring:
         # 本地：连接宿主机已映射的 Nacos（与 docker-compose 中 38848:8848 一致）
         server-addr: 127.0.0.1:38848
     gateway:
-      routes:
-        - id: order-service
-          uri: lb://sca-order
-          predicates:
-            - Path=/order/**
-        - id: product-service
-          uri: lb://sca-product
-          predicates:
-            - Path=/product/**
-        - id: user-service
-          uri: lb://sca-user
-          predicates:
-            - Path=/user/**
-        - id: loyalty-service
-          uri: lb://sca-loyalty
-          predicates:
-            - Path=/loyalty/**
+      server:
+        webflux:
+          routes:
+            - id: order-service
+              uri: lb://sca-order
+              predicates:
+                - Path=/order/**
+            - id: product-service
+              uri: lb://sca-product
+              predicates:
+                - Path=/product/**
+            - id: user-service
+              uri: lb://sca-user
+              predicates:
+                - Path=/user/**
+            - id: loyalty-service
+              uri: lb://sca-loyalty
+              predicates:
+                - Path=/loyalty/**
   insight:
     enabled: true
     service-name: sca-gateway
