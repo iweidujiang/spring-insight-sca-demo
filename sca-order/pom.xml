@@ -31,6 +31,12 @@
             <artifactId>spring-cloud-starter-openfeign</artifactId>
         </dependency>
 
+        <!-- Spring Cloud 2020+：Feign+Discovery 需要 LoadBalancer（替代已移除的 Ribbon） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
+        </dependency>
+
         <!-- Spring Insight -->
         <dependency>
             <groupId>io.github.iweidujiang</groupId>

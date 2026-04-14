@@ -3,6 +3,8 @@ spring:
     nacos:
       discovery:
         server-addr: nacos-standalone:8848
+        username: nacos
+        password: nacos
   insight:
     diagnostic-logs: false
 

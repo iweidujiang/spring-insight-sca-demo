@@ -1,7 +1,8 @@
-# 仅启动本 demo 各服务 + 压测 traffic；Nacos 请在本机另行启动（如 nacos-standalone @ my-network）。
+# 仅启动本 demo 各服务 + 压测 traffic；Nacos 在本机另行启动（如 nacos-standalone @ my-network）。
+# 镜像构建：宿主机 mvnw package 后 Docker 仅 COPY fat jar。
 #
-# 镜像构建极轻量：仅 COPY 各模块已打好的 fat jar（须先在项目根执行 mvnw package，compose-up 可自动执行）。
-# 不再在 Docker 内跑 Maven，避免长时间「卡住」。
+# networks.demo_net 是 Compose 里的「逻辑名」，通过 name + external 指向已有 Docker 网络
+# （默认与 Nacos 相同的 my-network），不是新建一套与 my-network 隔离的网络。
 #
 name: spring-insight-sca-demo
 
@@ -9,46 +10,57 @@ x-sca-build: &sca-build
   context: .
   dockerfile: Dockerfile
 
+# 与 Nacos 控制台一致的默认账号；若你修改了 Nacos 用户，请在 .env 中设置 NACOS_USERNAME / NACOS_PASSWORD
+x-nacos-auth: &nacos-auth
+  SPRING_CLOUD_NACOS_DISCOVERY_USERNAME: ${NACOS_USERNAME:-nacos}
+  SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD: ${NACOS_PASSWORD:-nacos}
+
 services:
   sca-product:
     build:
       <<: *sca-build
       target: product
     environment:
+      <<: *nacos-auth
       SPRING_PROFILES_ACTIVE: docker
-    networks: [sca]
+    networks: [demo_net]
 
   sca-loyalty:
     build:
       <<: *sca-build
       target: loyalty
     environment:
+      <<: *nacos-auth
       SPRING_PROFILES_ACTIVE: docker
-    networks: [sca]
+    networks: [demo_net]
 
   sca-user:
     build:
       <<: *sca-build
       target: user
     environment:
+      <<: *nacos-auth
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
       sca-loyalty:
         condition: service_started
-    networks: [sca]
+    networks: [demo_net]
 
   sca-order:
     build:
       <<: *sca-build
       target: order
+    ports:
+      - "8081:8081"
     environment:
+      <<: *nacos-auth
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
       sca-user:
         condition: service_started
       sca-product:
         condition: service_started
-    networks: [sca]
+    networks: [demo_net]
 
   sca-gateway:
     build:
@@ -57,11 +69,12 @@ services:
     ports:
       - "8080:8080"
     environment:
+      <<: *nacos-auth
       SPRING_PROFILES_ACTIVE: docker
     depends_on:
       sca-order:
         condition: service_started
-    networks: [sca]
+    networks: [demo_net]
 
   traffic:
     image: curlimages/curl:8.5.0
@@ -78,9 +91,9 @@ services:
             echo ""
             sleep 10
           done
-    networks: [sca]
+    networks: [demo_net]
 
 networks:
-  sca:
+  demo_net:
     name: ${DOCKER_NETWORK:-my-network}
     external: true
