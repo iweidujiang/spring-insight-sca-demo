@@ -8,6 +8,8 @@ spring:
   insight:
     enabled: true
     service-name: sca-order
+    # 与 Starter 内嵌前端构建的 base 一致；也可从网关 http://localhost:8080/spring-insight/ 访问
+    ui-base-path: /spring-insight
 
 server:
   port: 8081

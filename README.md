@@ -1,104 +1,107 @@
 # spring-insight-sca-demo
 
-Spring Cloud Alibaba（Nacos）多服务演示工程，用于本地压测 **Spring Insight** 的链路、拓扑与控制台。
+基于 **Spring Cloud Alibaba（Nacos）** 的多服务示例工程，演示微服务接入 **Spring Insight** 后的链路追踪、服务拓扑与监控控制台。
 
-**与 `spring-insight` 的关系**：二者为 **两个独立工程**（可分别建库、发版）；本仓库仅演示如何在微服务里接入官方 Starter，**不**改变 Spring Insight 作为通用工具的定位。
+与 **`spring-insight`** 仓库为独立工程：本 demo 仅展示接入方式；发版与依赖版本以各仓库为准。
 
-## 服务说明
+## 功能概览
 
-| 模块 | 端口（本地） | 说明 |
-|------|-------------|------|
-| sca-gateway | 8080 | Spring Cloud Gateway；**Spring Insight 埋点**（WebFlux 过滤器），不含 MVC 控制台 |
-| sca-order | 8081 | 下单 + Feign；**Docker 下 Spring Insight 控制台挂在本服务** |
+| 能力 | 说明 |
+|------|------|
+| 注册发现 | Nacos；业务容器与 Nacos 使用同一 Docker 网络（默认 `my-network`） |
+| 流量入口 | **sca-gateway**（8080），路由到 order / product / user / loyalty |
+| Spring Insight | 各服务引入 `spring-insight-spring-boot-starter`；**控制台与 Collector API 部署在 sca-order** |
+| 控制台访问 | 推荐 **经网关**：`http://localhost:8080/spring-insight/`；亦可直连 order：`http://localhost:8081/spring-insight/` |
+| 演示数据 | `scripts/smoke-traffic.ps1` / `smoke-traffic.sh` 经网关批量调用下单接口 |
+
+## 服务与端口
+
+| 模块 | 端口 | 说明 |
+|------|------|------|
+| sca-gateway | 8080 | Spring Cloud Gateway；Insight 使用 WebFlux 采集入口请求 |
+| sca-order | 8081 | 下单、OpenFeign；**Insight 控制台与 `/api/v1/**` 控制台 API** |
 | sca-product | 8082 | 商品价格 |
-| sca-user | 8083 | 用户：Feign 调用 loyalty |
+| sca-user | 8083 | 用户；Feign 调用 loyalty |
 | sca-loyalty | 8084 | 积分 |
-| Nacos | 见下 | 在本机单独用 Docker 启动，compose **不包含** Nacos |
 
-**Nacos**
+**Nacos**：不在本仓库 compose 内。需自行启动实例，容器名建议 `nacos-standalone`，与业务容器同网；注册中心地址在 `application-docker.yml` 中为 `nacos-standalone:8848`。本机调试时可在 `application.yml` 中把 `server-addr` 指向宿主映射端口（如 `127.0.0.1:38848`）。
 
-- 容器名：`nacos-standalone`，地址 `nacos-standalone:8848`（`application-docker.yml`）
-- 与业务容器同一 Docker 网络（默认 **`my-network`**，见下文「Compose 网络说明」）
-- 宿主端口示例：`38080:8080`、`38848:8848`、`39848:9848`
-- IDE 使用 `127.0.0.1:38848`（`application.yml`）
+## 环境要求
 
-**Spring Insight（本 demo 的接入方式）**
+- JDK 21、Docker、Docker Compose v2  
+- 已创建并与 Nacos 共用的 Docker 网络（默认 **`my-network`**，可通过 `.env` 中 **`DOCKER_NETWORK`** 修改）  
+- 可选：将 `.env.example` 复制为 **`.env`**，填写 **`NACOS_USERNAME`**、**`NACOS_PASSWORD`** 与 Nacos 控制台一致  
 
-- 网关 **保留** `spring-insight-spring-boot-starter`，并对 **`insight-collector`**、**`spring-boot-starter-web`** 做 **Maven exclusion**（避免 WebFlux 与 MVC 混用）；Starter 中的 **`insight-collector-service`**（收集器业务层，与 demo 无关的通用模块）仍在，由 **WebFlux `WebFilter`** 采网关入口流量。
-- **Insight 控制台（Docker）**：MVC 与静态资源仍在 **Servlet** 服务上，请访问 **<http://localhost:8081/>**（**sca-order**，compose 已映射 `8081:8081`）。
+## 启动方式
 
-网关路由：`/order/**`、`/product/**`、`/user/**`、`/loyalty/**`。
+### 脚本（推荐）
 
-## Compose 网络说明（`networks: [demo_net]` 是什么？）
+在仓库根目录执行：
 
-`docker-compose.yml` 里 **`demo_net` 只是 Compose 文件中的逻辑名**，通过：
+- Windows：`.\compose-up.ps1`  
+- Linux / macOS：`chmod +x ./compose-up.sh && ./compose-up.sh`  
 
-```yaml
-networks:
-  demo_net:
-    name: ${DOCKER_NETWORK:-my-network}
-    external: true
-```
+脚本会执行 **`mvnw clean package -DskipTests`**，再 **`docker compose up -d --build`**。完成后用 **`docker compose logs -f [服务名]`** 查看日志。
 
-指向**已存在的** Docker 网络（默认 **`my-network`**），与 `docker run --network my-network` 启动的 **Nacos 在同一张网**，容器之间可用 **`nacos-standalone`** 解析。
-
-若写成 `networks: [demo_net]`，**不是**另建一张与 `my-network` 隔离的网；**就是**加入 `name` 所指的那张网。
-
-## 本地运行（IDE）
-
-1. `docker network create my-network`（若尚无）
-2. 启动 **Nacos**（`--network my-network`，容器名 `nacos-standalone`）
-3. **`spring-insight` 父工程** `mvn clean install -DskipTests`
-4. 本目录启动各 `*Application`
-
-## Docker Compose 一键启动
-
-1. **`.\compose-up.ps1`**（Windows）或 **`./compose-up.sh`**（Linux/macOS）：**每次**执行都会 **`mvnw clean package -DskipTests`**、**`docker compose up -d --build`**，容器在后台运行，脚本结束后**不会**一直刷容器日志。
-2. 复制 **`.env.example`** 为 **`.env`** 可配置 **`DOCKER_NETWORK`**、**`NACOS_USERNAME`** / **`NACOS_PASSWORD`**
-
-### 与脚本等价的命令行（自行执行）
-
-在 **`spring-insight-sca-demo`** 目录下（已配置好 `mvnw` 与 `docker-compose.yml`）：
+### 手动（等价）
 
 ```bash
-# 1）将 Spring Insight 安装到本机 Maven 仓库（若你改的是与本仓库同级的 spring-insight 源码，需要先 install）
-# cd ../spring-insight && ./mvnw.cmd -B -ntp clean install -DskipTests   # Windows
-# cd ../spring-insight && ./mvnw -B -ntp clean install -DskipTests        # Unix
-
-# 2）打包 demo 全部模块
-./mvnw.cmd -B -ntp clean package -DskipTests    # Windows
-# ./mvnw -B -ntp clean package -DskipTests      # Linux/macOS
-
-# 3）确保与 Nacos 共用网络（默认名与 .env 中 DOCKER_NETWORK 一致，例如 my-network）
-docker network create my-network || true   # Linux/macOS：已存在会失败，可忽略
-
-# 4）构建镜像并后台启动
+cd spring-insight && ./mvnw -B -ntp clean install -DskipTests
+cd ../spring-insight-sca-demo && ./mvnw -B -ntp clean package -DskipTests
+docker network create my-network 2>/dev/null || true
 docker compose up -d --build
 ```
 
-PowerShell 创建网络（不存在则创建）：
+（Windows 可将 `./mvnw` 换为 `mvnw.cmd`。）
+
+## 使用说明
+
+### 打开控制台
+
+- **网关入口（推荐）**：<http://localhost:8080/spring-insight/>  
+- **直连 order**：<http://localhost:8081/spring-insight/>  
+- 兼容重定向：<http://localhost:8081/insight-ui> → 上述前缀根路径  
+
+网关已将 **`/spring-insight/**`** 与 **`/api/v1/**`** 转发到 **sca-order**，与内置前端 `base` 及 `spring.insight.ui-base-path` 一致。
+
+### 产生示例流量
+
+在 **`spring-insight-sca-demo`** 目录：
 
 ```powershell
-docker network inspect my-network 2>$null | Out-Null; if (-not $?) { docker network create my-network }
+.\scripts\smoke-traffic.ps1
+.\scripts\smoke-traffic.ps1 -Count 80 -BaseUrl "http://localhost:8080"
 ```
 
-查看日志：`docker compose logs -f` 或 `docker compose logs -f sca-gateway`。
+```bash
+chmod +x ./scripts/smoke-traffic.sh
+./scripts/smoke-traffic.sh 50
+BASE_URL=http://localhost:8080 ./scripts/smoke-traffic.sh 80
+```
 
-### 访问
+默认请求：`GET {网关}/order/create?userId=1&productId=1`（经网关会走 product、user、loyalty 等调用）。随后在控制台查看 **链路 / 拓扑**。
 
-- API 网关：<http://localhost:8080/>
-- **Insight 控制台（Docker）**：<http://localhost:8081/>
-- Nacos 控制台：按你本机端口映射（如 <http://localhost:38848/nacos>）
+### 业务路由（经网关）
 
-### Nacos 报 401 / `User not found`
+| 前缀 | 目标服务 |
+|------|-----------|
+| `/order/**` | sca-order |
+| `/product/**` | sca-product |
+| `/user/**` | sca-user |
+| `/loyalty/**` | sca-loyalty |
 
-说明客户端账号与 Nacos 服务端不一致。请保证：
+### 配置说明（摘要）
 
-1. Nacos 控制台能使用 **`nacos` / `nacos`** 登录；或  
-2. 在 **`.env`** 中设置 **`NACOS_USERNAME`**、**`NACOS_PASSWORD`**（与控制台一致），并重新 `docker compose up`。
+| 配置项 | 含义 |
+|--------|------|
+| `spring.insight.ui-base-path` | 控制台 SPA 与静态资源 URL 前缀，需与 Starter 内嵌前端构建一致；本 demo 为 **`/spring-insight`** |
+| `DOCKER_NETWORK`（`.env`） | 与 Nacos、业务容器共用的外部网络名 |
+| `spring.cloud.gateway.server.webflux.routes` | 网关路由（见 `sca-gateway` 的 `application.yml`） |
 
-修改 **`spring-insight` 源码**后需先在其目录执行 **`mvn install`**，再在 demo 目录执行 **`compose-up`** 或 **`mvnw clean package`** 后 **`docker compose up -d --build`**。
+## 数据说明
 
-## Spring Insight 数据存储
+Trace / Span 等数据保存在 **运行控制台所在 JVM 的内存** 中（本 demo 为 **sca-order**）；进程重启后清空。
 
-Trace/Span 在**集成 Insight 控制台的 JVM** 内存中；Docker 默认在 **sca-order** 上看控制台。
+## Compose 网络名 `demo_net`
+
+`docker-compose.yml` 中的 **`demo_net`** 为 Compose 文件内逻辑名，通过 `external: true` 与 `name: ${DOCKER_NETWORK:-my-network}` 指向已存在的 Docker 网络，与 `docker run --network my-network` 的 Nacos 同属一张网。

@@ -12,6 +12,15 @@ spring:
       server:
         webflux:
           routes:
+            # 控制台 UI 与 REST API 在 sca-order（Servlet）；经网关统一入口
+            - id: insight-console-api
+              uri: lb://sca-order
+              predicates:
+                - Path=/api/v1/**
+            - id: insight-console-ui
+              uri: lb://sca-order
+              predicates:
+                - Path=/spring-insight/**
             - id: order-service
               uri: lb://sca-order
               predicates:
