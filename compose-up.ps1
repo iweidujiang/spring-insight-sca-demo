@@ -1,4 +1,4 @@
-# 一键：本机 Maven 打包（若缺 jar）+ Docker 构建镜像（仅 COPY jar）+ compose up
+# 每次执行：本机 Maven 重新打包 + Docker 构建镜像 + 后台启动容器（不附着日志）
 # Nacos 需已在外部启动并接入 DOCKER_NETWORK（默认 my-network）
 param(
     [Parameter(ValueFromRemainingArguments = $true)]
@@ -27,29 +27,12 @@ if (-not $env:DOCKER_NETWORK) {
     $env:DOCKER_NETWORK = "my-network"
 }
 
-$requiredJars = @(
-    "sca-gateway/target/sca-gateway-1.0.0-SNAPSHOT.jar",
-    "sca-order/target/sca-order-1.0.0-SNAPSHOT.jar",
-    "sca-user/target/sca-user-1.0.0-SNAPSHOT.jar",
-    "sca-product/target/sca-product-1.0.0-SNAPSHOT.jar",
-    "sca-loyalty/target/sca-loyalty-1.0.0-SNAPSHOT.jar"
-)
-$needPackage = $false
-foreach ($rel in $requiredJars) {
-    $jarPath = Join-Path $here $rel
-    if (-not (Test-Path -LiteralPath $jarPath)) {
-        $needPackage = $true
-        break
-    }
+Write-Host "[compose-up] Maven clean package (all modules)..."
+$mvnw = Join-Path $here "mvnw.cmd"
+if (-not (Test-Path -LiteralPath $mvnw)) {
+    Write-Error "[compose-up] mvnw.cmd not found."
 }
-if ($needPackage) {
-    Write-Host "[compose-up] Missing fat jars; running Maven Wrapper (uses your settings.xml / local repo)..."
-    $mvnw = Join-Path $here "mvnw.cmd"
-    if (-not (Test-Path -LiteralPath $mvnw)) {
-        Write-Error "[compose-up] mvnw.cmd not found."
-    }
-    & $mvnw -B -ntp clean package -DskipTests
-}
+& $mvnw -B -ntp clean package -DskipTests
 
 docker network inspect $env:DOCKER_NETWORK 2>$null | Out-Null
 if (-not $?) {
@@ -65,5 +48,6 @@ if (-not $env:COMPOSE_PARALLEL_LIMIT) {
     $env:COMPOSE_PARALLEL_LIMIT = "5"
 }
 
-Write-Host "[compose-up] docker compose up --build ..."
-& docker compose up --build @ComposeArgs
+Write-Host "[compose-up] docker compose up -d --build (detached)..."
+& docker compose up -d --build @ComposeArgs
+Write-Host "[compose-up] Done. View logs: docker compose logs -f [service]"

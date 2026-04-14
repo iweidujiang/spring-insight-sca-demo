@@ -1,4 +1,4 @@
-# Docker：Gateway 仅 WebFlux，勿引入 Servlet MVC / Spring Insight（见 README）
+# Docker：强制 WebFlux；Insight 使用 WebFlux 过滤器 + Starter 中的 insight-collector-service（未引入 MVC 版 insight-collector）
 spring:
   main:
     web-application-type: reactive

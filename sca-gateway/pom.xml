@@ -25,10 +25,20 @@
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
 
-        <!-- Spring Insight -->
+        <!-- Spring Insight：WebFlux 宿主排除 MVC 版收集器与 Tomcat；insight-collector-service 仍由 Starter 引入 -->
         <dependency>
             <groupId>io.github.iweidujiang</groupId>
             <artifactId>spring-insight-spring-boot-starter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.github.iweidujiang</groupId>
+                    <artifactId>insight-collector</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-web</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- 测试 -->
