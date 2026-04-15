@@ -34,6 +34,8 @@
 
 ## 启动方式
 
+**可选持续压测容器**：`docker-compose.yml` 中的 **`traffic`** 已配置 **`profiles: ["traffic"]`**，默认 **`docker compose up` 不会启动**，避免未手动调接口却持续产生链路。需要与旧版相同的后台请求时执行：`docker compose --profile traffic up -d`。
+
 ### 脚本（推荐）
 
 在仓库根目录执行：
@@ -103,6 +105,8 @@ BASE_URL=http://localhost:8080 ./scripts/smoke-traffic.sh 80
 ## 数据说明
 
 Trace / Span 等数据保存在 **运行控制台所在 JVM 的内存** 中（本 demo 为 **sca-order**）；进程重启后清空。
+
+**拓扑与依赖**：控制台中的依赖边来自 Span 上的 **`remoteService`** 字段。Starter 会为 **OpenFeign 出站调用** 上报 CLIENT 型 Span（含 `sca-user`、`sca-product` 等目标服务名），调用 **`/order/create`** 并刷新仪表盘/拓扑页后即可看到 **sca-order → 下游服务** 的边。
 
 ## Compose 网络名 `demo_net`
 

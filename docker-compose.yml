@@ -76,7 +76,10 @@ services:
         condition: service_started
     networks: [demo_net]
 
+  # 可选：持续向网关打 /order/create（默认不启用，避免「未调接口却不断有链路」）
+  # 启用：docker compose --profile traffic up -d
   traffic:
+    profiles: ["traffic"]
     image: curlimages/curl:8.5.0
     depends_on:
       sca-gateway:
