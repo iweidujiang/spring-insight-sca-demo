@@ -1,61 +1,74 @@
-# 仅启动本 demo 各服务 + 压测 traffic；Nacos 在本机另行启动（如 nacos-standalone @ my-network）。
-# 镜像构建：宿主机 mvnw package 后 Docker 仅 COPY fat jar。
-#
-# networks.demo_net 是 Compose 里的「逻辑名」，通过 name + external 指向已有 Docker 网络
-# （默认与 Nacos 相同的 my-network），不是新建一套与 my-network 隔离的网络。
-#
 name: spring-insight-sca-demo
 
-x-sca-build: &sca-build
-  context: .
-  dockerfile: Dockerfile
-
-# 与 Nacos 控制台一致的默认账号；若你修改了 Nacos 用户，请在 .env 中设置 NACOS_USERNAME / NACOS_PASSWORD
-x-nacos-auth: &nacos-auth
+x-sca-env: &sca-env
+  SPRING_PROFILES_ACTIVE: docker
   SPRING_CLOUD_NACOS_DISCOVERY_USERNAME: ${NACOS_USERNAME:-nacos}
   SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD: ${NACOS_PASSWORD:-nacos}
 
 services:
+  nacos-standalone:
+    image: nacos/nacos-server:v2.4.3
+    container_name: nacos-standalone
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "true"
+      NACOS_AUTH_IDENTITY_KEY: ${NACOS_AUTH_IDENTITY_KEY:-serverIdentity}
+      NACOS_AUTH_IDENTITY_VALUE: ${NACOS_AUTH_IDENTITY_VALUE:-security}
+      NACOS_AUTH_TOKEN: ${NACOS_AUTH_TOKEN:-0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz}
+      SPRING_SECURITY_USER_NAME: ${NACOS_USERNAME:-nacos}
+      SPRING_SECURITY_USER_PASSWORD: ${NACOS_PASSWORD:-nacos}
+    ports:
+      - "38080:8080"
+      - "38848:8848"
+      - "39848:9848"
+    networks: [demo_net]
+
   sca-product:
     build:
-      <<: *sca-build
-      target: product
+      context: ..
+      dockerfile: spring-insight-sca-demo/sca-product/Dockerfile
     environment:
-      <<: *nacos-auth
-      SPRING_PROFILES_ACTIVE: docker
+      <<: *sca-env
+    depends_on:
+      nacos-standalone:
+        condition: service_started
     networks: [demo_net]
 
   sca-loyalty:
     build:
-      <<: *sca-build
-      target: loyalty
+      context: ..
+      dockerfile: spring-insight-sca-demo/sca-loyalty/Dockerfile
     environment:
-      <<: *nacos-auth
-      SPRING_PROFILES_ACTIVE: docker
+      <<: *sca-env
+    depends_on:
+      nacos-standalone:
+        condition: service_started
     networks: [demo_net]
 
   sca-user:
     build:
-      <<: *sca-build
-      target: user
+      context: ..
+      dockerfile: spring-insight-sca-demo/sca-user/Dockerfile
     environment:
-      <<: *nacos-auth
-      SPRING_PROFILES_ACTIVE: docker
+      <<: *sca-env
     depends_on:
+      nacos-standalone:
+        condition: service_started
       sca-loyalty:
         condition: service_started
     networks: [demo_net]
 
   sca-order:
     build:
-      <<: *sca-build
-      target: order
+      context: ..
+      dockerfile: spring-insight-sca-demo/sca-order/Dockerfile
     ports:
-      - "8081:8081"
+      - "8081:18081"
     environment:
-      <<: *nacos-auth
-      SPRING_PROFILES_ACTIVE: docker
+      <<: *sca-env
     depends_on:
+      nacos-standalone:
+        condition: service_started
       sca-user:
         condition: service_started
       sca-product:
@@ -64,20 +77,19 @@ services:
 
   sca-gateway:
     build:
-      <<: *sca-build
-      target: gateway
+      context: ..
+      dockerfile: spring-insight-sca-demo/sca-gateway/Dockerfile
     ports:
-      - "8080:8080"
+      - "8080:18080"
     environment:
-      <<: *nacos-auth
-      SPRING_PROFILES_ACTIVE: docker
+      <<: *sca-env
     depends_on:
+      nacos-standalone:
+        condition: service_started
       sca-order:
         condition: service_started
     networks: [demo_net]
 
-  # 可选：持续向网关打 /order/create（默认不启用，避免「未调接口却不断有链路」）
-  # 启用：docker compose --profile traffic up -d
   traffic:
     profiles: ["traffic"]
     image: curlimages/curl:8.5.0
@@ -90,7 +102,7 @@ services:
       - |
           sleep 40
           while true; do
-            curl -sS "http://sca-gateway:8080/order/create?userId=1&productId=1" || true
+            curl -sS "http://sca-gateway:18080/order/create?userId=1&productId=1" || true
             echo ""
             sleep 10
           done
@@ -98,5 +110,4 @@ services:
 
 networks:
   demo_net:
-    name: ${DOCKER_NETWORK:-my-network}
-    external: true
+    driver: bridge
