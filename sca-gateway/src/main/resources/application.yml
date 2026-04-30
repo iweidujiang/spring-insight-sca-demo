@@ -42,4 +42,4 @@ spring:
     service-name: sca-gateway
 
 server:
-  port: 8080
+  port: 18080

@@ -10,4 +10,4 @@ spring:
     service-name: sca-product
 
 server:
-  port: 8082
+  port: 18082

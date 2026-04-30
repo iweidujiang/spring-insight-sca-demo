@@ -7,33 +7,33 @@ FROM eclipse-temurin:21-jre-alpine AS gateway
 WORKDIR /app
 COPY sca-gateway/target/sca-gateway-1.0.0-SNAPSHOT.jar app.jar
 ENV SPRING_PROFILES_ACTIVE=docker
-EXPOSE 8080
+EXPOSE 18080
 ENTRYPOINT ["java","-jar","/app/app.jar"]
 
 FROM eclipse-temurin:21-jre-alpine AS order
 WORKDIR /app
 COPY sca-order/target/sca-order-1.0.0-SNAPSHOT.jar app.jar
 ENV SPRING_PROFILES_ACTIVE=docker
-EXPOSE 8081
+EXPOSE 18081
 ENTRYPOINT ["java","-jar","/app/app.jar"]
 
 FROM eclipse-temurin:21-jre-alpine AS user
 WORKDIR /app
 COPY sca-user/target/sca-user-1.0.0-SNAPSHOT.jar app.jar
 ENV SPRING_PROFILES_ACTIVE=docker
-EXPOSE 8083
+EXPOSE 18083
 ENTRYPOINT ["java","-jar","/app/app.jar"]
 
 FROM eclipse-temurin:21-jre-alpine AS product
 WORKDIR /app
 COPY sca-product/target/sca-product-1.0.0-SNAPSHOT.jar app.jar
 ENV SPRING_PROFILES_ACTIVE=docker
-EXPOSE 8082
+EXPOSE 18082
 ENTRYPOINT ["java","-jar","/app/app.jar"]
 
 FROM eclipse-temurin:21-jre-alpine AS loyalty
 WORKDIR /app
 COPY sca-loyalty/target/sca-loyalty-1.0.0-SNAPSHOT.jar app.jar
 ENV SPRING_PROFILES_ACTIVE=docker
-EXPOSE 8084
+EXPOSE 18084
 ENTRYPOINT ["java","-jar","/app/app.jar"]

@@ -10,4 +10,4 @@ spring:
     service-name: sca-user
 
 server:
-  port: 8083
+  port: 18083

@@ -10,4 +10,4 @@ spring:
     service-name: sca-loyalty
 
 server:
-  port: 8084
+  port: 18084
