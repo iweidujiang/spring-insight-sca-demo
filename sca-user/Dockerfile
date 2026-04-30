@@ -1,4 +1,5 @@
-FROM maven:3.9.9-eclipse-temurin-21 AS builder
+ARG MAVEN_IMAGE=maven:3.9.9-eclipse-temurin-21
+FROM ${MAVEN_IMAGE} AS builder
 WORKDIR /workspace
 
 COPY spring-insight ./spring-insight

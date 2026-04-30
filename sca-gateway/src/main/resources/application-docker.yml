@@ -5,7 +5,7 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: nacos-standalone:8848
+        server-addr: sca-nacos:8848
         username: nacos
         password: nacos
 

@@ -6,7 +6,8 @@
 
 - 每个微服务各自维护独立 `Dockerfile`：  
   `sca-gateway/Dockerfile`、`sca-order/Dockerfile`、`sca-user/Dockerfile`、`sca-product/Dockerfile`、`sca-loyalty/Dockerfile`
-- `docker-compose.yml` 直接构建并启动完整环境（含 `nacos-standalone`）
+- `docker-compose.yml` 直接构建并启动完整环境（含 `sca-nacos`）
+- 全部容器固定使用项目专属 Docker 网络 `sca-net`，与其他项目隔离
 - 无需预先在宿主机执行 Maven 打包；直接一条命令启动
 
 ## 一键启动
@@ -29,7 +30,7 @@ docker compose down
 |------|----------|----------|
 | sca-gateway | 8080 | 18080 |
 | sca-order | 8081 | 18081 |
-| nacos-standalone | 38080 / 38848 / 39848 | 8080 / 8848 / 9848 |
+| sca-nacos | 38080 / 38848 / 39848 | 8080 / 8848 / 9848 |
 
 `sca-product`、`sca-user`、`sca-loyalty` 不暴露宿主端口，通过网关与服务间调用访问。
 
@@ -39,6 +40,11 @@ docker compose down
 - Insight 控制台（经网关）：<http://localhost:8080/spring-insight/>
 - Insight 控制台（直连 order）：<http://localhost:8081/spring-insight/>
 - Nacos 控制台：<http://localhost:38848/nacos>
+
+## 网络隔离
+
+- 本项目容器全部加入 `sca-net`
+- Nacos 服务名固定为 `sca-nacos`，各微服务在 docker profile 下统一使用 `sca-nacos:8848`
 
 ## 可选持续流量
 

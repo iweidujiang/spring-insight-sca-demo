@@ -6,9 +6,9 @@ x-sca-env: &sca-env
   SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD: ${NACOS_PASSWORD:-nacos}
 
 services:
-  nacos-standalone:
-    image: nacos/nacos-server:v2.4.3
-    container_name: nacos-standalone
+  sca-nacos:
+    image: nacos/nacos-server:v3.1.1
+    container_name: sca-nacos
     environment:
       MODE: standalone
       NACOS_AUTH_ENABLE: "true"
@@ -21,74 +21,84 @@ services:
       - "38080:8080"
       - "38848:8848"
       - "39848:9848"
-    networks: [demo_net]
+    networks: [sca-net]
 
   sca-product:
     build:
       context: ..
       dockerfile: spring-insight-sca-demo/sca-product/Dockerfile
+      args:
+        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
     environment:
       <<: *sca-env
     depends_on:
-      nacos-standalone:
+      sca-nacos:
         condition: service_started
-    networks: [demo_net]
+    networks: [sca-net]
 
   sca-loyalty:
     build:
       context: ..
       dockerfile: spring-insight-sca-demo/sca-loyalty/Dockerfile
+      args:
+        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
     environment:
       <<: *sca-env
     depends_on:
-      nacos-standalone:
+      sca-nacos:
         condition: service_started
-    networks: [demo_net]
+    networks: [sca-net]
 
   sca-user:
     build:
       context: ..
       dockerfile: spring-insight-sca-demo/sca-user/Dockerfile
+      args:
+        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
     environment:
       <<: *sca-env
     depends_on:
-      nacos-standalone:
+      sca-nacos:
         condition: service_started
       sca-loyalty:
         condition: service_started
-    networks: [demo_net]
+    networks: [sca-net]
 
   sca-order:
     build:
       context: ..
       dockerfile: spring-insight-sca-demo/sca-order/Dockerfile
+      args:
+        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
     ports:
       - "8081:18081"
     environment:
       <<: *sca-env
     depends_on:
-      nacos-standalone:
+      sca-nacos:
         condition: service_started
       sca-user:
         condition: service_started
       sca-product:
         condition: service_started
-    networks: [demo_net]
+    networks: [sca-net]
 
   sca-gateway:
     build:
       context: ..
       dockerfile: spring-insight-sca-demo/sca-gateway/Dockerfile
+      args:
+        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
     ports:
       - "8080:18080"
     environment:
       <<: *sca-env
     depends_on:
-      nacos-standalone:
+      sca-nacos:
         condition: service_started
       sca-order:
         condition: service_started
-    networks: [demo_net]
+    networks: [sca-net]
 
   traffic:
     profiles: ["traffic"]
@@ -106,8 +116,9 @@ services:
             echo ""
             sleep 10
           done
-    networks: [demo_net]
+    networks: [sca-net]
 
 networks:
-  demo_net:
+  sca-net:
+    name: sca-net
     driver: bridge
