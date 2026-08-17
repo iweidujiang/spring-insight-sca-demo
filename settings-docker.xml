@@ -1,15 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  可选：本机/CI 使用的 Maven settings 示例（仅镜像，不绑定盘符）。
-  自定义 localRepository 请在「用户级」~/.m2/settings.xml 中配置，勿写死在仓库里。
--->
+<!-- Docker 构建专用：不设置 localRepository，使用容器内 /root/.m2/repository（由 compose 注入本机依赖） -->
 <settings xmlns="http://maven.apache.org/SETTINGS/1.2.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.2.0 https://maven.apache.org/xsd/settings-1.2.0.xsd">
     <mirrors>
         <mirror>
             <id>aliyunmaven</id>
-            <mirrorOf>central</mirrorOf>
+            <mirrorOf>*</mirrorOf>
             <url>https://maven.aliyun.com/repository/public</url>
         </mirror>
     </mirrors>

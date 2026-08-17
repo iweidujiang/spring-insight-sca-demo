@@ -1,0 +1,37 @@
+# syntax=docker/dockerfile:1
+# 业务微服务通用构建文件
+#
+# 前置：本机 Maven 仓库已安装 spring-insight-agent-starter（在 Insight 工程执行 mvn install）
+# Compose 通过 additional_contexts.m2repo 注入本机 localRepository
+
+ARG MAVEN_IMAGE=maven:3.9.9-eclipse-temurin-21
+FROM ${MAVEN_IMAGE} AS builder
+
+# 模块名，例如 sca-order / sca-gateway
+ARG MODULE=sca-order
+
+WORKDIR /build
+
+# m2repo = 宿主机 Maven localRepository 根目录（内含 io/github/iweidujiang/...）
+COPY --from=m2repo / /root/.m2/repository/
+
+# 仅使用镜像内默认 settings（中央库/阿里云由构建机网络决定）；不绑死本机盘符
+COPY settings-docker.xml /root/.m2/settings.xml
+
+COPY pom.xml .
+COPY sca-gateway sca-gateway/
+COPY sca-order sca-order/
+COPY sca-product sca-product/
+COPY sca-user sca-user/
+COPY sca-loyalty sca-loyalty/
+
+RUN mvn -B -ntp -pl ${MODULE} -am clean package -DskipTests
+
+FROM eclipse-temurin:21-jre-alpine
+ARG MODULE=sca-order
+ARG SERVER_PORT=8080
+WORKDIR /app
+COPY --from=builder /build/${MODULE}/target/${MODULE}-*.jar app.jar
+ENV SPRING_PROFILES_ACTIVE=docker
+EXPOSE ${SERVER_PORT}
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

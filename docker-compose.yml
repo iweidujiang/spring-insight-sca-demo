@@ -1,19 +1,32 @@
 name: spring-insight-sca-demo
 
+# 本工程是独立第三方 Demo：不编译 spring-insight 源码。
+# 使用前请先准备：
+#   1) 将 Spring Insight 安装到本机 Maven 仓库（mvn install）
+#   2) 在 .env 中配置 MAVEN_REPO 与 INSIGHT_SERVER_JAR
+
 x-sca-env: &sca-env
   SPRING_PROFILES_ACTIVE: docker
   SPRING_CLOUD_NACOS_DISCOVERY_USERNAME: ${NACOS_USERNAME:-nacos}
   SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD: ${NACOS_PASSWORD:-nacos}
 
+x-service-build: &service-build
+  context: .
+  dockerfile: Dockerfile.service
+  additional_contexts:
+    # 本机 Maven localRepository（须已含 spring-insight-agent-starter）
+    m2repo: ${MAVEN_REPO:?请在 .env 中设置 MAVEN_REPO 为本机 Maven localRepository 路径}
+  args:
+    MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
+
 services:
-  # 独立监测中心：控制台 http://localhost:9966/
+  # 独立监测中心：使用已构建好的 insight-server 可执行 jar
   insight-server:
-    build:
-      context: ..
-      dockerfile: spring-insight/insight-server/Dockerfile
-      args:
-        MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
+    image: ${JAVA_RUNTIME_IMAGE:-eclipse-temurin:21-jre-alpine}
     container_name: insight-server
+    volumes:
+      - ${INSIGHT_SERVER_JAR:?请在 .env 中设置 INSIGHT_SERVER_JAR 为 insight-server 可执行 jar 路径}:/app/app.jar:ro
+    command: ["java", "-jar", "/app/app.jar"]
     ports:
       - "9966:9966"
     networks: [sca-net]
@@ -37,10 +50,11 @@ services:
 
   sca-product:
     build:
-      context: ..
-      dockerfile: spring-insight-sca-demo/sca-product/Dockerfile
+      <<: *service-build
       args:
         MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
+        MODULE: sca-product
+        SERVER_PORT: "18082"
     environment:
       <<: *sca-env
     depends_on:
@@ -52,10 +66,11 @@ services:
 
   sca-loyalty:
     build:
-      context: ..
-      dockerfile: spring-insight-sca-demo/sca-loyalty/Dockerfile
+      <<: *service-build
       args:
         MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
+        MODULE: sca-loyalty
+        SERVER_PORT: "18084"
     environment:
       <<: *sca-env
     depends_on:
@@ -67,10 +82,11 @@ services:
 
   sca-user:
     build:
-      context: ..
-      dockerfile: spring-insight-sca-demo/sca-user/Dockerfile
+      <<: *service-build
       args:
         MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
+        MODULE: sca-user
+        SERVER_PORT: "18083"
     environment:
       <<: *sca-env
     depends_on:
@@ -84,10 +100,11 @@ services:
 
   sca-order:
     build:
-      context: ..
-      dockerfile: spring-insight-sca-demo/sca-order/Dockerfile
+      <<: *service-build
       args:
         MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
+        MODULE: sca-order
+        SERVER_PORT: "18081"
     ports:
       - "8081:18081"
     environment:
@@ -105,10 +122,11 @@ services:
 
   sca-gateway:
     build:
-      context: ..
-      dockerfile: spring-insight-sca-demo/sca-gateway/Dockerfile
+      <<: *service-build
       args:
         MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
+        MODULE: sca-gateway
+        SERVER_PORT: "18080"
     ports:
       - "8080:18080"
     environment:
