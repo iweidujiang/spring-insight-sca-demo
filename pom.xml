@@ -63,10 +63,10 @@
                 <scope>import</scope>
             </dependency>
 
-            <!-- Spring Insight -->
+            <!-- Spring Insight：业务侧轻量 Agent（上报到独立 insight-server） -->
             <dependency>
                 <groupId>io.github.iweidujiang</groupId>
-                <artifactId>spring-insight-spring-boot-starter</artifactId>
+                <artifactId>spring-insight-agent-starter</artifactId>
                 <version>${spring.insight.version}</version>
             </dependency>
 

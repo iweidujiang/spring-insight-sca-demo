@@ -6,8 +6,7 @@ spring:
       discovery:
         server-addr: 127.0.0.1:38848
   insight:
-    enabled: true
-    service-name: sca-user
+    server-url: http://localhost:9966
 
 server:
   port: 18083

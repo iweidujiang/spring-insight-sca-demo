@@ -6,10 +6,8 @@ spring:
       discovery:
         server-addr: 127.0.0.1:38848
   insight:
-    enabled: true
-    service-name: sca-order
-    # 与 Starter 内嵌前端构建的 base 一致；也可从网关 http://localhost:8080/spring-insight/ 访问
-    ui-base-path: /spring-insight
+    # serviceName 默认取 spring.application.name；上报到独立监测中心
+    server-url: http://localhost:9966
 
 server:
   port: 18081

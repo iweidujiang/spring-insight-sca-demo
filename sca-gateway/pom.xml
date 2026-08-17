@@ -13,45 +13,28 @@
     <name>SCA Gateway</name>
 
     <dependencies>
-        <!-- Spring Cloud Gateway -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
-
-        <!-- Nacos Discovery -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-discovery</artifactId>
         </dependency>
-
-        <!-- lb:// 路由解析实例列表必需（与 Nacos 是否已有数据无关；无此依赖时常表现为 503） -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
 
-        <!-- Spring Insight：WebFlux 宿主排除 MVC 版收集器与 Tomcat；insight-collector-service 仍由 Starter 引入 -->
-        <dependency>
-            <groupId>io.github.iweidujiang</groupId>
-            <artifactId>spring-insight-spring-boot-starter</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>io.github.iweidujiang</groupId>
-                    <artifactId>insight-collector</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-web</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <!-- 测试 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.iweidujiang</groupId>
+            <artifactId>spring-insight-agent-starter</artifactId>
         </dependency>
     </dependencies>
 

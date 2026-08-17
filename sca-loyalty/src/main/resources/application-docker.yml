@@ -6,6 +6,7 @@ spring:
         username: nacos
         password: nacos
   insight:
+    server-url: http://insight-server:9966
     diagnostic-logs: false
 
 server:
