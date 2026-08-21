@@ -6,8 +6,10 @@ spring:
   cloud:
     nacos:
       discovery:
-        # 本地：连接宿主机已映射的 Nacos（与 docker-compose 中 38848:8848 一致）
+        # 本地：宿主机映射端口（nacos-standalone -p 38848:8848）
         server-addr: 127.0.0.1:38848
+        username: nacos
+        password: nacos
     gateway:
       server:
         webflux:

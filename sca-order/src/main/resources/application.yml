@@ -4,7 +4,10 @@ spring:
   cloud:
     nacos:
       discovery:
+        # 宿主机映射端口（与 nacos-standalone -p 38848:8848 一致）
         server-addr: 127.0.0.1:38848
+        username: nacos
+        password: nacos
   insight:
     # serviceName 默认取 spring.application.name；上报到独立监测中心
     server-url: http://localhost:9966

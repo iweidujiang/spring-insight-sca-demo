@@ -1,12 +1,15 @@
 name: spring-insight-sca-demo
 
-# 本工程是独立第三方 Demo：不编译 spring-insight 源码。
-# 使用前请先准备：
-#   1) 将 Spring Insight 安装到本机 Maven 仓库（mvn install）
-#   2) 在 .env 中配置 MAVEN_REPO 与 INSIGHT_SERVER_JAR
+# 本工程是独立第三方 Demo
+# 使用前先准备：
+#   1) 本机已有 Nacos（例如容器 nacos-standalone，网络 my-network）
+#   2) 将 Spring Insight install 到 Maven 仓库，并在 .env 配置 MAVEN_REPO、INSIGHT_SERVER_JAR
+#   3) .env 中 DOCKER_NETWORK 与 Nacos 所在网络一致（默认 my-network）
 
 x-sca-env: &sca-env
   SPRING_PROFILES_ACTIVE: docker
+  # 覆盖 application-docker.yml，指向外部 Nacos
+  SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR:-nacos-standalone:8848}
   SPRING_CLOUD_NACOS_DISCOVERY_USERNAME: ${NACOS_USERNAME:-nacos}
   SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD: ${NACOS_PASSWORD:-nacos}
 
@@ -14,13 +17,12 @@ x-service-build: &service-build
   context: .
   dockerfile: Dockerfile.service
   additional_contexts:
-    # 本机 Maven localRepository（须已含 spring-insight-agent-starter）
     m2repo: ${MAVEN_REPO:?请在 .env 中设置 MAVEN_REPO 为本机 Maven localRepository 路径}
   args:
     MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
 
 services:
-  # 独立监测中心：使用已构建好的 insight-server 可执行 jar
+  # 独立监测中心：挂载已构建的 insight-server jar
   insight-server:
     image: ${JAVA_RUNTIME_IMAGE:-eclipse-temurin:21-jre-alpine}
     container_name: insight-server
@@ -29,24 +31,7 @@ services:
     command: ["java", "-jar", "/app/app.jar"]
     ports:
       - "9966:9966"
-    networks: [sca-net]
-
-  sca-nacos:
-    image: nacos/nacos-server:v3.1.1
-    container_name: sca-nacos
-    environment:
-      MODE: standalone
-      NACOS_AUTH_ENABLE: "true"
-      NACOS_AUTH_IDENTITY_KEY: ${NACOS_AUTH_IDENTITY_KEY:-serverIdentity}
-      NACOS_AUTH_IDENTITY_VALUE: ${NACOS_AUTH_IDENTITY_VALUE:-security}
-      NACOS_AUTH_TOKEN: ${NACOS_AUTH_TOKEN:-0123456789abcdefghijklmnopqrstuvwxyz0123456789abcdefghijklmnopqrstuvwxyz}
-      SPRING_SECURITY_USER_NAME: ${NACOS_USERNAME:-nacos}
-      SPRING_SECURITY_USER_PASSWORD: ${NACOS_PASSWORD:-nacos}
-    ports:
-      - "38080:8080"
-      - "38848:8848"
-      - "39848:9848"
-    networks: [sca-net]
+    networks: [demo-net]
 
   sca-product:
     build:
@@ -60,9 +45,7 @@ services:
     depends_on:
       insight-server:
         condition: service_started
-      sca-nacos:
-        condition: service_started
-    networks: [sca-net]
+    networks: [demo-net]
 
   sca-loyalty:
     build:
@@ -76,9 +59,7 @@ services:
     depends_on:
       insight-server:
         condition: service_started
-      sca-nacos:
-        condition: service_started
-    networks: [sca-net]
+    networks: [demo-net]
 
   sca-user:
     build:
@@ -92,11 +73,9 @@ services:
     depends_on:
       insight-server:
         condition: service_started
-      sca-nacos:
-        condition: service_started
       sca-loyalty:
         condition: service_started
-    networks: [sca-net]
+    networks: [demo-net]
 
   sca-order:
     build:
@@ -112,13 +91,11 @@ services:
     depends_on:
       insight-server:
         condition: service_started
-      sca-nacos:
-        condition: service_started
       sca-user:
         condition: service_started
       sca-product:
         condition: service_started
-    networks: [sca-net]
+    networks: [demo-net]
 
   sca-gateway:
     build:
@@ -134,11 +111,9 @@ services:
     depends_on:
       insight-server:
         condition: service_started
-      sca-nacos:
-        condition: service_started
       sca-order:
         condition: service_started
-    networks: [sca-net]
+    networks: [demo-net]
 
   traffic:
     profiles: ["traffic"]
@@ -156,9 +131,10 @@ services:
             echo ""
             sleep 10
           done
-    networks: [sca-net]
+    networks: [demo-net]
 
 networks:
-  sca-net:
-    name: sca-net
-    driver: bridge
+  # 接入本机已存在的 Docker 网络
+  demo-net:
+    name: ${DOCKER_NETWORK:-my-network}
+    external: true

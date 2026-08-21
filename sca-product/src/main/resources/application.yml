@@ -5,6 +5,8 @@ spring:
     nacos:
       discovery:
         server-addr: 127.0.0.1:38848
+        username: nacos
+        password: nacos
   insight:
     server-url: http://localhost:9966
 

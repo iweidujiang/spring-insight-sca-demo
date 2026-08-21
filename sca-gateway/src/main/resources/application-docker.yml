@@ -1,11 +1,11 @@
-# Docker：WebFlux 网关 + Agent 上报到 insight-server（无需 exclusion MVC）
+# Docker：WebFlux 网关；Nacos 使用本机已启动的 nacos-standalone（网络 my-network）
 spring:
   main:
     web-application-type: reactive
   cloud:
     nacos:
       discovery:
-        server-addr: sca-nacos:8848
+        server-addr: nacos-standalone:8848
         username: nacos
         password: nacos
   insight:
