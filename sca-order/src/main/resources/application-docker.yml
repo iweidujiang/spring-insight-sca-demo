@@ -5,7 +5,7 @@ spring:
         # 与本机已启动的 nacos-standalone 同网（compose 使用 external my-network）
         server-addr: nacos-standalone:8848
         username: nacos
-        password: nacos
+        password: nacOsdev316
   insight:
     server-url: http://insight-server:9966
     diagnostic-logs: false
