@@ -10,8 +10,9 @@ x-sca-env: &sca-env
   SPRING_PROFILES_ACTIVE: docker
   # 覆盖 application-docker.yml，指向外部 Nacos
   SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR:-nacos-standalone:8848}
+  # 须与本机 Nacos 控制台账号一致
   SPRING_CLOUD_NACOS_DISCOVERY_USERNAME: ${NACOS_USERNAME:-nacos}
-  SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD: ${NACOS_PASSWORD:-nacos}
+  SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD: ${NACOS_PASSWORD:-nacOsdev316}
 
 x-service-build: &service-build
   context: .

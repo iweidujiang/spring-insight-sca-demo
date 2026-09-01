@@ -83,7 +83,7 @@ docker compose --profile traffic up -d
 | **Insight 控制台** | http://localhost:9966/ |
 | 业务网关 | http://localhost:8080/ |
 | 造数 | `curl "http://localhost:8080/order/create?userId=1&productId=1"` |
-| 外部 Nacos | http://localhost:38848/nacos （默认账号 nacos/nacos） |
+| 外部 Nacos | http://localhost:38848/nacos （账号见 `.env` 的 `NACOS_USERNAME`/`NACOS_PASSWORD`） |
 
 ```bash
 curl -sS "http://localhost:9966/api/v1/health"
