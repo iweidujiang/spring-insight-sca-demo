@@ -31,7 +31,7 @@
         <spring.boot.version>3.5.9</spring.boot.version>
         <spring.cloud.version>2025.0.0</spring.cloud.version>
         <spring.cloud.alibaba.version>2025.0.0.0</spring.cloud.alibaba.version>
-        <spring.insight.version>0.1.0-SNAPSHOT</spring.insight.version>
+        <spring.insight.version>0.2.0-SNAPSHOT</spring.insight.version>
     </properties>
 
     <dependencyManagement>
