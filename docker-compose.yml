@@ -5,6 +5,7 @@ name: spring-insight-sca-demo
 #   1) 本机已有 Nacos（例如容器 nacos-standalone，网络 my-network）
 #   2) 将 Spring Insight install 到 Maven 仓库，并在 .env 配置 MAVEN_REPO、INSIGHT_SERVER_JAR
 #   3) .env 中 DOCKER_NETWORK 与 Nacos 所在网络一致（默认 my-network）
+# 宿主机端口被占用时：用 scripts/docker-up.ps1（或 docker-up.sh）自动换端口后再启动
 
 x-sca-env: &sca-env
   SPRING_PROFILES_ACTIVE: docker
@@ -31,7 +32,7 @@ services:
       - ${INSIGHT_SERVER_JAR:?请在 .env 中设置 INSIGHT_SERVER_JAR 为 insight-server 可执行 jar 路径}:/app/app.jar:ro
     command: ["java", "-jar", "/app/app.jar"]
     ports:
-      - "9966:9966"
+      - "${INSIGHT_HOST_PORT:-9966}:9966"
     networks: [demo-net]
 
   sca-product:
@@ -86,7 +87,7 @@ services:
         MODULE: sca-order
         SERVER_PORT: "18081"
     ports:
-      - "8081:18081"
+      - "${ORDER_HOST_PORT:-8081}:18081"
     environment:
       <<: *sca-env
     depends_on:
@@ -106,7 +107,7 @@ services:
         MODULE: sca-gateway
         SERVER_PORT: "18080"
     ports:
-      - "8080:18080"
+      - "${GATEWAY_HOST_PORT:-8080}:18080"
     environment:
       <<: *sca-env
     depends_on:

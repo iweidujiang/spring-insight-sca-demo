@@ -60,8 +60,31 @@ cp .env.example .env
 
 确认 Nacos 已在 `DOCKER_NETWORK` 上运行后，在本工程根目录：
 
+**推荐（端口被占用时会自动换到空闲端口）：**
+
+```powershell
+.\scripts\docker-up.ps1 -Build
+# 需要造数 profile：
+# .\scripts\docker-up.ps1 -Build -Traffic
+```
+
+脚本会写入 `.env.ports`（已 gitignore），并打印实际访问地址。仅探测端口：
+
+```powershell
+.\scripts\docker-up.ps1 -ResolveOnly
+```
+
+也可以直接 Compose（端口写死在变量默认值，占用则会失败）：
+
 ```bash
 docker compose up -d --build
+```
+
+手动指定宿主机端口示例：
+
+```bash
+# Windows PowerShell
+$env:ORDER_HOST_PORT=18081; docker compose up -d
 ```
 
 停止（**不会**停掉外部 Nacos）：
@@ -70,15 +93,17 @@ docker compose up -d --build
 docker compose down
 ```
 
-可选持续造数：
+可选持续造数（若未用 `-Traffic`）：
 
 ```bash
-docker compose --profile traffic up -d
+docker compose --env-file .env --env-file .env.ports --profile traffic up -d
 ```
 
 ## 访问地址
 
-| 用途 | URL |
+默认首选端口如下；若用了 `docker-up` 自动换端口，以脚本输出 / `.env.ports` 为准。
+
+| 用途 | URL（默认） |
 |------|-----|
 | **Insight 控制台** | http://localhost:9966/ |
 | 业务网关 | http://localhost:8080/ |
@@ -95,13 +120,14 @@ curl -sS "http://localhost:9966/api/v1/ui/dependencies"
 
 ## 端口
 
-| 服务 | 本机端口 | 说明 |
-|------|----------|------|
-| insight-server | 9966 | 挂载外部 jar |
-| sca-gateway | 8080 | 业务入口 |
-| sca-order | 8081 | 可直连 |
-| nacos-standalone（外部） | 38848 等 | 本机自行维护，不在本 compose 内 |
+| 服务 | 宿主机默认 | 环境变量 | 说明 |
+|------|----------|----------|------|
+| insight-server | 9966 | `INSIGHT_HOST_PORT` | 挂载外部 jar |
+| sca-gateway | 8080 | `GATEWAY_HOST_PORT` | 业务入口 |
+| sca-order | 8081 | `ORDER_HOST_PORT` | 可直连 |
+| nacos-standalone（外部） | 38848 等 | — | 本机自行维护，不在本 compose 内 |
 
+容器内端口不变（gateway `18080`、order `18081` 等）；仅映射到本机的端口可换。
 ## 本机 IDE 启动
 
 1. 确保本机 Maven 已能解析 `spring-insight-agent-starter`  
