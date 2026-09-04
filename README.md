@@ -2,8 +2,6 @@
 
 独立的 Spring Cloud Alibaba（Nacos）微服务演示工程，通过 Maven 依赖使用开源监测工具 **[Spring Insight](https://github.com/iweidujiang/spring-insight)**。
 
-本仓库**不包含** Spring Insight 源码，也不在 Docker 构建中编译 Insight；将其视为与业务无关的第三方组件。
-
 ## 架构
 
 ```text
@@ -17,21 +15,7 @@
 ## 前置条件
 
 1. **JDK 21**、Docker Compose v2  
-2. **本机已启动 Nacos**（本 Demo **不再**用 compose 拉起 Nacos）。推荐与下列一致，以便容器通过 Docker 网络访问：
-
-```bash
-docker network create my-network   # 若尚不存在
-docker run --name nacos-standalone --network my-network \
-  -e MODE=standalone \
-  -e NACOS_AUTH_TOKEN="aEJxaDVFMjIxcTlyQjlvOHZFMVBMaEM2emtZb1hjVWZEVE4=" \
-  -e NACOS_AUTH_IDENTITY_KEY="serverIdentity" \
-  -e NACOS_AUTH_IDENTITY_VALUE="nacosSecurity" \
-  -v D:\docker_service_data\nacos\application.properties:/home/nacos/conf/application.properties \
-  -v D:\docker_service_data\nacos\logs:/home/nacos/logs \
-  -p 38080:8080 -p 38848:8848 -p 39848:9848 \
-  -d nacos/nacos-server:v3.1.1
-```
-
+2. **本机已启动 Nacos**（本 Demo **不再**用 compose 拉起 Nacos）。
 3. 已安装 Spring Insight 到本机 Maven 仓库，例如：
 
 ```bash
