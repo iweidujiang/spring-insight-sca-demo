@@ -25,11 +25,20 @@ x-service-build: &service-build
 
 services:
   # 独立监测中心：挂载已构建的 insight-server jar
+  # 存储只在 Server 侧配置；业务微服务无需设置 storage.mode
   insight-server:
     image: ${JAVA_RUNTIME_IMAGE:-eclipse-temurin:21-jre-alpine}
     container_name: insight-server
+    working_dir: /app
     volumes:
       - ${INSIGHT_SERVER_JAR:?请在 .env 中设置 INSIGHT_SERVER_JAR 为 insight-server 可执行 jar 路径}:/app/app.jar:ro
+      # 自动创建；目录由 Server 自行建，用户不必手工 mkdir
+      - insight-spans:/data
+    environment:
+      # file = JSON 落盘（重启可恢复）；改 memory 则仅内存
+      SPRING_INSIGHT_SERVER_STORAGE_MODE: ${INSIGHT_STORAGE_MODE:-file}
+      SPRING_INSIGHT_SERVER_STORAGE_FILE_PATH: /data/spans.json
+      SPRING_INSIGHT_SERVER_STORAGE_FLUSH_DELAY_MS: "2000"
     command: ["java", "-jar", "/app/app.jar"]
     ports:
       - "${INSIGHT_HOST_PORT:-9966}:9966"
@@ -140,3 +149,6 @@ networks:
   demo-net:
     name: ${DOCKER_NETWORK:-my-network}
     external: true
+
+volumes:
+  insight-spans:

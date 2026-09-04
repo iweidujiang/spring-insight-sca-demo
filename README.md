@@ -149,5 +149,7 @@ spring:
 
 ## 说明
 
-- Span 保存在 insight-server **进程内存**，重启 Server 后历史清空。  
+- **存储只在 insight-server**：`spring.insight.server.storage.mode` **不要**写到各微服务里。业务侧只需 `server-url` 上报即可。  
+- Demo 默认 `INSIGHT_STORAGE_MODE=file`，Span 落到 Docker volume `insight-spans`（容器内 `/data/spans.json`），**不用手工建目录**；改成 `memory` 则重启清空。  
+- 验证落盘：造几笔流量后看 `GET /api/v1/health` 的 `storageMode` / `storedSpans`，再 `docker restart insight-server`，条数应仍在。  
 - 升级 Insight 时：在 Insight 仓库重新 `mvn install` / 重新打包 server jar，再重建本 Demo 镜像即可。
