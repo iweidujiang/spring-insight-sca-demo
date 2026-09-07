@@ -121,6 +121,31 @@ curl -sS "http://localhost:9966/api/v1/ui/dependencies"
 5. 造数：`curl "http://localhost:18080/order/create?userId=1&productId=1"`  
 6. 打开 http://localhost:9966/
 
+### 验证 Insight ↔ Micrometer（sca-order）
+
+`sca-order` 已加 `actuator` + `micrometer-registry-prometheus`。先确保本机已 `mvn install` 最新 `spring-insight-agent-starter`，再重建/重启 order。
+
+```powershell
+# 1) 造几笔流量（网关或直连 order）
+curl "http://localhost:8080/order/create?userId=1&productId=1"
+curl "http://localhost:8081/order/create?userId=1&productId=1"
+
+# 2) 刮取 Prometheus 文本（Docker 映射端口默认 8081 → 容器 18081）
+curl -s "http://localhost:8081/actuator/prometheus" | Select-String "spring_insight"
+# IDE 本机直连则用：
+curl -s "http://localhost:18081/actuator/prometheus" | Select-String "spring_insight"
+```
+
+期望看到类似：
+
+- `spring_insight_spans_accepted_total`
+- `spring_insight_span_seconds_count` / `_sum`（tag：`span_kind`、`remote_service`、`success`）
+- `spring_insight_reporter_queue_size`
+
+同时打开 http://localhost:9966/ 应仍有拓扑/链路（与 Prometheus 互补，不是替代）。
+
+若没有 `spring_insight_*`：确认依赖的是新版 agent、日志里有 `[Micrometer] Insight 指标已注册`、且未设 `spring.insight.micrometer-enabled=false`。
+
 ## 业务侧如何接入 Insight（本工程已配置）
 
 ```xml

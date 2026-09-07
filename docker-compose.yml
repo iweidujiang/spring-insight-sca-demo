@@ -36,7 +36,7 @@ services:
       - insight-spans:/data
     environment:
       # file = JSON 落盘（重启可恢复）；改 memory 则仅内存
-      SPRING_INSIGHT_SERVER_STORAGE_MODE: ${INSIGHT_STORAGE_MODE:-file}
+      SPRING_INSIGHT_SERVER_STORAGE_MODE: ${INSIGHT_STORAGE_MODE:-memory}
       SPRING_INSIGHT_SERVER_STORAGE_FILE_PATH: /data/spans.json
       SPRING_INSIGHT_SERVER_STORAGE_FLUSH_DELAY_MS: "2000"
     command: ["java", "-jar", "/app/app.jar"]

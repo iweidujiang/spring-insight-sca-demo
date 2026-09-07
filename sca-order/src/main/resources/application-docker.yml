@@ -9,6 +9,13 @@ spring:
   insight:
     server-url: http://insight-server:9966
     diagnostic-logs: false
+    micrometer-enabled: true
 
 server:
   address: 0.0.0.0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics

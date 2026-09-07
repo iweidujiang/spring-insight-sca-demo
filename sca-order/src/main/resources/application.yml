@@ -11,6 +11,19 @@ spring:
   insight:
     # serviceName 默认取 spring.application.name；上报到独立监测中心
     server-url: http://localhost:9966
+    micrometer-enabled: true
 
 server:
   port: 18081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    tags:
+      application: ${spring.application.name}
