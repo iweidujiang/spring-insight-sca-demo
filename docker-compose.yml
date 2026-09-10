@@ -1,19 +1,24 @@
 name: spring-insight-sca-demo
 
-# 本工程是独立第三方 Demo
-# 使用前先准备：
+# 本工程是独立第三方 Demo：只起业务微服务，不拉起 insight-server。
+# 使用前请先准备：
 #   1) 本机已有 Nacos（例如容器 nacos-standalone，网络 my-network）
-#   2) 将 Spring Insight install 到 Maven 仓库，并在 .env 配置 MAVEN_REPO、INSIGHT_SERVER_JAR
-#   3) .env 中 DOCKER_NETWORK 与 Nacos 所在网络一致（默认 my-network）
+#   2) 已单独启动 Spring Insight Server（推荐 GHCR 镜像，宿主机 9966）
+#   3) 业务侧能解析 spring-insight-agent-starter（Central 或本地 install）
+#   4) .env 中配置 MAVEN_REPO、DOCKER_NETWORK（与 Nacos 同网）
 # 宿主机端口被占用时：用 scripts/docker-up.ps1（或 docker-up.sh）自动换端口后再启动
+#
+# 默认上报地址：http://host.docker.internal:9966（容器访问宿主机上的 Server）
+# 若把 Server 容器加入同一 Docker 网络并命名为 insight-server，可在 .env 设：
+#   INSIGHT_SERVER_URL=http://insight-server:9966
 
 x-sca-env: &sca-env
   SPRING_PROFILES_ACTIVE: docker
-  # 覆盖 application-docker.yml，指向外部 Nacos
   SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: ${NACOS_SERVER_ADDR:-nacos-standalone:8848}
-  # 须与本机 Nacos 控制台账号一致
   SPRING_CLOUD_NACOS_DISCOVERY_USERNAME: ${NACOS_USERNAME:-nacos}
   SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD: ${NACOS_PASSWORD:-nacOsdev316}
+  # 覆盖 application-docker.yml；指向外部已启动的 insight-server
+  SPRING_INSIGHT_SERVER_URL: ${INSIGHT_SERVER_URL:-http://host.docker.internal:9966}
 
 x-service-build: &service-build
   context: .
@@ -24,26 +29,6 @@ x-service-build: &service-build
     MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
 
 services:
-  # 独立监测中心：挂载已构建的 insight-server jar
-  # 存储只在 Server 侧配置；业务微服务无需设置 storage.mode
-  insight-server:
-    image: ${JAVA_RUNTIME_IMAGE:-eclipse-temurin:21-jre-alpine}
-    container_name: insight-server
-    working_dir: /app
-    volumes:
-      - ${INSIGHT_SERVER_JAR:?请在 .env 中设置 INSIGHT_SERVER_JAR 为 insight-server 可执行 jar 路径}:/app/app.jar:ro
-      # 自动创建；目录由 Server 自行建，用户不必手工 mkdir
-      - insight-spans:/data
-    environment:
-      # file = JSON 落盘（重启可恢复）；改 memory 则仅内存
-      SPRING_INSIGHT_SERVER_STORAGE_MODE: ${INSIGHT_STORAGE_MODE:-memory}
-      SPRING_INSIGHT_SERVER_STORAGE_FILE_PATH: /data/spans.json
-      SPRING_INSIGHT_SERVER_STORAGE_FLUSH_DELAY_MS: "2000"
-    command: ["java", "-jar", "/app/app.jar"]
-    ports:
-      - "${INSIGHT_HOST_PORT:-9966}:9966"
-    networks: [demo-net]
-
   sca-product:
     build:
       <<: *service-build
@@ -53,9 +38,8 @@ services:
         SERVER_PORT: "18082"
     environment:
       <<: *sca-env
-    depends_on:
-      insight-server:
-        condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks: [demo-net]
 
   sca-loyalty:
@@ -67,9 +51,8 @@ services:
         SERVER_PORT: "18084"
     environment:
       <<: *sca-env
-    depends_on:
-      insight-server:
-        condition: service_started
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks: [demo-net]
 
   sca-user:
@@ -81,9 +64,9 @@ services:
         SERVER_PORT: "18083"
     environment:
       <<: *sca-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
-      insight-server:
-        condition: service_started
       sca-loyalty:
         condition: service_started
     networks: [demo-net]
@@ -99,9 +82,9 @@ services:
       - "${ORDER_HOST_PORT:-8081}:18081"
     environment:
       <<: *sca-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
-      insight-server:
-        condition: service_started
       sca-user:
         condition: service_started
       sca-product:
@@ -119,9 +102,9 @@ services:
       - "${GATEWAY_HOST_PORT:-8080}:18080"
     environment:
       <<: *sca-env
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
-      insight-server:
-        condition: service_started
       sca-order:
         condition: service_started
     networks: [demo-net]
@@ -145,10 +128,6 @@ services:
     networks: [demo-net]
 
 networks:
-  # 接入本机已存在的 Docker 网络
   demo-net:
     name: ${DOCKER_NETWORK:-my-network}
     external: true
-
-volumes:
-  insight-spans:

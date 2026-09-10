@@ -6,7 +6,7 @@ spring:
         username: nacos
         password: nacOsdev316
   insight:
-    server-url: http://insight-server:9966
+    server-url: http://host.docker.internal:9966
     diagnostic-logs: false
 
 server:

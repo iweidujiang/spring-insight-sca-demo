@@ -5,6 +5,8 @@
 #   ./scripts/docker-up.sh --build
 #   ./scripts/docker-up.sh --traffic
 #   ./scripts/docker-up.sh --resolve-only
+#
+# 注意：insight-server 需已在宿主机单独启动（默认 http://localhost:9966/）。
 
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -13,7 +15,6 @@ cd "$ROOT"
 BUILD=0
 TRAFFIC=0
 RESOLVE_ONLY=0
-INSIGHT_PREFER=9966
 GATEWAY_PREFER=8080
 ORDER_PREFER=8081
 SPAN=40
@@ -58,24 +59,21 @@ find_free() {
 }
 
 USED=""
-INSIGHT_HOST_PORT="$(find_free "$INSIGHT_PREFER" "$USED")"
-USED="$USED $INSIGHT_HOST_PORT"
 GATEWAY_HOST_PORT="$(find_free "$GATEWAY_PREFER" "$USED")"
 USED="$USED $GATEWAY_HOST_PORT"
 ORDER_HOST_PORT="$(find_free "$ORDER_PREFER" "$USED")"
 
 cat > .env.ports <<EOF
 # 由 scripts/docker-up.sh 自动生成，勿手改；端口占用时会自动改选
-INSIGHT_HOST_PORT=$INSIGHT_HOST_PORT
 GATEWAY_HOST_PORT=$GATEWAY_HOST_PORT
 ORDER_HOST_PORT=$ORDER_HOST_PORT
 EOF
 
 echo "宿主机端口映射："
-echo "  insight-server  http://localhost:${INSIGHT_HOST_PORT}/"
 echo "  sca-gateway     http://localhost:${GATEWAY_HOST_PORT}/"
 echo "  sca-order       http://localhost:${ORDER_HOST_PORT}/ (容器内仍为 18081)"
-if [[ "$INSIGHT_HOST_PORT" != "$INSIGHT_PREFER" || "$GATEWAY_HOST_PORT" != "$GATEWAY_PREFER" || "$ORDER_HOST_PORT" != "$ORDER_PREFER" ]]; then
+echo "  insight-server  http://localhost:9966/ （外部，请先单独启动）"
+if [[ "$GATEWAY_HOST_PORT" != "$GATEWAY_PREFER" || "$ORDER_HOST_PORT" != "$ORDER_PREFER" ]]; then
   echo "提示：首选端口被占用，已自动切换（见 .env.ports）"
 fi
 
@@ -98,5 +96,5 @@ docker compose "${ARGS[@]}"
 
 echo ""
 echo "启动完成。访问示例："
-echo "  控制台  http://localhost:${INSIGHT_HOST_PORT}/"
+echo "  控制台  http://localhost:9966/ （外部 insight-server）"
 echo "  造数    curl \"http://localhost:${GATEWAY_HOST_PORT}/order/create?userId=1&productId=1\""

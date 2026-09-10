@@ -2,47 +2,54 @@
 
 独立的 Spring Cloud Alibaba（Nacos）微服务演示工程，通过 Maven 依赖使用开源监测工具 **[Spring Insight](https://github.com/iweidujiang/spring-insight)**。
 
+本 Compose **只起业务微服务**；`insight-server` 请另用 Docker / jar 单独启动。
+
 ## 架构
 
 ```text
 本工程微服务（gateway / order / product / user / loyalty）
-        │  依赖坐标：spring-insight-agent-starter（Maven）
-        │  配置：spring.insight.server-url
+        │  依赖：spring-insight-agent-starter（Maven Central 或本地）
+        │  配置：spring.insight.server-url → 宿主机上的 Server
         ▼
-第三方进程 insight-server:9966   ← 控制台 + Span 存储（由 Spring Insight 提供）
+外部 insight-server:9966   ← 你先单独 docker run / compose（GHCR 镜像）
 ```
 
 ## 前置条件
 
 1. **JDK 21**、Docker Compose v2  
-2. **本机已启动 Nacos**（本 Demo **不再**用 compose 拉起 Nacos）。
-3. 已安装 Spring Insight 到本机 Maven 仓库，例如：
+2. **本机已启动 Nacos**（本 Demo **不再**用 compose 拉起 Nacos）  
+3. **已单独启动 Spring Insight Server**（推荐）：
 
 ```bash
-# 在 Spring Insight 仓库目录
-mvn clean install -DskipTests
+docker run --rm -p 9966:9966 \
+  -e SPRING_INSIGHT_SERVER_STORAGE_MODE=file \
+  -e SPRING_INSIGHT_SERVER_STORAGE_FILE_PATH=/data/spans.json \
+  -v spring-insight-data:/data \
+  ghcr.io/iweidujiang/spring-insight-server:0.1.0
 ```
 
-4. 准备好 `insight-server` 可执行 jar，并配置 `.env`：
+4. 业务侧能解析 `spring-insight-agent-starter:0.1.0`（Central 即可；开发 SNAPSHOT 时再本地 `mvn install`）  
+5. 配置 `.env`：
 
 ```bash
 cd spring-insight-sca-demo
 cp .env.example .env
-# 编辑：MAVEN_REPO、INSIGHT_SERVER_JAR、DOCKER_NETWORK（默认 my-network）
+# 编辑：MAVEN_REPO、DOCKER_NETWORK（默认 my-network）
 ```
 
 | 变量 | 含义 |
 |------|------|
-| `MAVEN_REPO` | Maven **localRepository**（含 `io/github/iweidujiang/...`） |
-| `INSIGHT_SERVER_JAR` | 已构建的 `insight-server` fat jar |
+| `MAVEN_REPO` | Maven **localRepository**（构建镜像时注入，解析 Starter） |
+| `INSIGHT_SERVER_URL` | 容器内上报地址，默认 `http://host.docker.internal:9966` |
 | `DOCKER_NETWORK` | 与 Nacos 相同的外部网络（默认 `my-network`） |
 | `NACOS_SERVER_ADDR` | 容器内地址（默认 `nacos-standalone:8848`） |
 
-> Windows 路径建议用正斜杠，例如 `D:/Java/mvn_repo`。
+> Windows 路径建议用正斜杠，例如 `D:/Java/mvn_repo`。  
+> 若把 Server 容器加入同一 Docker 网并命名为 `insight-server`，可设 `INSIGHT_SERVER_URL=http://insight-server:9966`。
 
 ## 一键启动（Docker）
 
-确认 Nacos 已在 `DOCKER_NETWORK` 上运行后，在本工程根目录：
+确认 Nacos 与 insight-server 已就绪后，在本工程根目录：
 
 **推荐（端口被占用时会自动换到空闲端口）：**
 
@@ -58,26 +65,19 @@ cp .env.example .env
 .\scripts\docker-up.ps1 -ResolveOnly
 ```
 
-也可以直接 Compose（端口写死在变量默认值，占用则会失败）：
+也可以直接 Compose：
 
 ```bash
 docker compose up -d --build
 ```
 
-手动指定宿主机端口示例：
-
-```bash
-# Windows PowerShell
-$env:ORDER_HOST_PORT=18081; docker compose up -d
-```
-
-停止（**不会**停掉外部 Nacos）：
+停止（**不会**停掉外部 Nacos / insight-server）：
 
 ```bash
 docker compose down
 ```
 
-可选持续造数（若未用 `-Traffic`）：
+可选持续造数：
 
 ```bash
 docker compose --env-file .env --env-file .env.ports --profile traffic up -d
@@ -85,14 +85,12 @@ docker compose --env-file .env --env-file .env.ports --profile traffic up -d
 
 ## 访问地址
 
-默认首选端口如下；若用了 `docker-up` 自动换端口，以脚本输出 / `.env.ports` 为准。
-
 | 用途 | URL（默认） |
 |------|-----|
-| **Insight 控制台** | http://localhost:9966/ |
+| **Insight 控制台**（外部） | http://localhost:9966/ |
 | 业务网关 | http://localhost:8080/ |
 | 造数 | `curl "http://localhost:8080/order/create?userId=1&productId=1"` |
-| 外部 Nacos | http://localhost:38848/nacos （账号见 `.env` 的 `NACOS_USERNAME`/`NACOS_PASSWORD`） |
+| 外部 Nacos | http://localhost:38848/nacos |
 
 ```bash
 curl -sS "http://localhost:9966/api/v1/health"
@@ -106,45 +104,33 @@ curl -sS "http://localhost:9966/api/v1/ui/dependencies"
 
 | 服务 | 宿主机默认 | 环境变量 | 说明 |
 |------|----------|----------|------|
-| insight-server | 9966 | `INSIGHT_HOST_PORT` | 挂载外部 jar |
+| insight-server（外部） | 9966 | — | 本 compose 不管理 |
 | sca-gateway | 8080 | `GATEWAY_HOST_PORT` | 业务入口 |
 | sca-order | 8081 | `ORDER_HOST_PORT` | 可直连 |
-| nacos-standalone（外部） | 38848 等 | — | 本机自行维护，不在本 compose 内 |
+| nacos-standalone（外部） | 38848 等 | — | 本机自行维护 |
 
 容器内端口不变（gateway `18080`、order `18081` 等）；仅映射到本机的端口可换。
+
 ## 本机 IDE 启动
 
 1. 确保本机 Maven 已能解析 `spring-insight-agent-starter`  
-2. 单独启动 Insight：`java -jar <insight-server.jar>`（端口 9966）  
-3. 确保本机 Nacos 已映射到 `127.0.0.1:38848`（各模块 `application.yml` 默认连此地址）  
+2. 单独启动 Insight（Docker 或 `java -jar`，端口 9966）  
+3. 确保本机 Nacos 已映射到 `127.0.0.1:38848`  
 4. 再启动本工程各模块：loyalty → product → user → order → gateway  
 5. 造数：`curl "http://localhost:18080/order/create?userId=1&productId=1"`  
 6. 打开 http://localhost:9966/
 
 ### 验证 Insight ↔ Micrometer（sca-order）
 
-`sca-order` 已加 `actuator` + `micrometer-registry-prometheus`。先确保本机已 `mvn install` 最新 `spring-insight-agent-starter`，再重建/重启 order。
+`sca-order` 已加 `actuator` + `micrometer-registry-prometheus`。
 
 ```powershell
-# 1) 造几笔流量（网关或直连 order）
 curl "http://localhost:8080/order/create?userId=1&productId=1"
-curl "http://localhost:8081/order/create?userId=1&productId=1"
-
-# 2) 刮取 Prometheus 文本（Docker 映射端口默认 8081 → 容器 18081）
 curl -s "http://localhost:8081/actuator/prometheus" | Select-String "spring_insight"
-# IDE 本机直连则用：
-curl -s "http://localhost:18081/actuator/prometheus" | Select-String "spring_insight"
 ```
 
-期望看到类似：
-
-- `spring_insight_spans_accepted_total`
-- `spring_insight_span_seconds_count` / `_sum`（tag：`span_kind`、`remote_service`、`success`）
-- `spring_insight_reporter_queue_size`
-
-同时打开 http://localhost:9966/ 应仍有拓扑/链路（与 Prometheus 互补，不是替代）。
-
-若没有 `spring_insight_*`：确认依赖的是新版 agent、日志里有 `[Micrometer] Insight 指标已注册`、且未设 `spring.insight.micrometer-enabled=false`。
+期望看到 `spring_insight_spans_accepted_total`、`spring_insight_span_seconds_*`、`spring_insight_reporter_queue_size` 等。  
+同时打开 http://localhost:9966/ 应仍有拓扑/链路（与 Prometheus 互补）。
 
 ## 业务侧如何接入 Insight（本工程已配置）
 
@@ -152,7 +138,7 @@ curl -s "http://localhost:18081/actuator/prometheus" | Select-String "spring_ins
 <dependency>
   <groupId>io.github.iweidujiang</groupId>
   <artifactId>spring-insight-agent-starter</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0</version>
 </dependency>
 ```
 
@@ -161,7 +147,8 @@ spring:
   application:
     name: sca-order
   insight:
-    server-url: http://localhost:9966   # Docker 内为 http://insight-server:9966
+    server-url: http://localhost:9966
+    # Docker profile 默认 host.docker.internal:9966，可由 INSIGHT_SERVER_URL 覆盖
 ```
 
 无需 `@EnableSpringInsight`。
@@ -169,12 +156,10 @@ spring:
 ## Docker 构建说明
 
 - 构建 context 为本仓库根目录；通用脚本为 `Dockerfile.service`。  
-- 通过 Compose `additional_contexts.m2repo` 注入本机 Maven 仓库，从而解析第三方 `spring-insight-agent-starter`。  
-- `insight-server` 服务**不构建** Insight 源码，只挂载 `INSIGHT_SERVER_JAR`。
+- 通过 Compose `additional_contexts.m2repo` 注入本机 Maven 仓库，从而解析 `spring-insight-agent-starter`。  
+- **本 compose 不再包含 insight-server**；请用 GHCR 镜像或 jar 单独启动。
 
 ## 说明
 
-- **存储只在 insight-server**：`spring.insight.server.storage.mode` **不要**写到各微服务里。业务侧只需 `server-url` 上报即可。  
-- Demo 默认 `INSIGHT_STORAGE_MODE=file`，Span 落到 Docker volume `insight-spans`（容器内 `/data/spans.json`），**不用手工建目录**；改成 `memory` 则重启清空。  
-- 验证落盘：造几笔流量后看 `GET /api/v1/health` 的 `storageMode` / `storedSpans`，再 `docker restart insight-server`，条数应仍在。  
-- 升级 Insight 时：在 Insight 仓库重新 `mvn install` / 重新打包 server jar，再重建本 Demo 镜像即可。
+- **存储只在 insight-server**：不要把 `spring.insight.server.storage.*` 写到各微服务。业务侧只需 `server-url`。  
+- 升级 Agent：Central 升版本或本地 `mvn install` 后重建本 Demo 镜像即可。
