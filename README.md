@@ -11,14 +11,26 @@
         │  依赖：spring-insight-agent-starter（Maven Central 或本地）
         │  配置：spring.insight.server-url → 宿主机上的 Server
         ▼
-外部 insight-server:9966   ← 你先单独 docker run / compose（GHCR 镜像）
+外部 insight-server:9966   ← 你先单独启动（compose.dev 本地构建 / GHCR / jar）
 ```
 
 ## 前置条件
 
 1. **JDK 21**、Docker Compose v2  
 2. **本机已启动 Nacos**（本 Demo **不再**用 compose 拉起 Nacos）  
-3. **已单独启动 Spring Insight Server**（推荐）：
+3. **已单独启动 Spring Insight Server**（本 Demo 不包含 Server）
+
+**开发联调（测本机改过的 Server / sqlite）：** 在 `spring-insight` 仓库根目录：
+
+```bash
+cd D:/a-github-project/spring-insight
+mvn -pl insight-server -am package -DskipTests
+docker compose -f compose.dev.yaml up -d --build
+# 可选：$env:INSIGHT_STORAGE_MODE="file"|"memory"|"sqlite"
+curl -sS http://localhost:9966/api/v1/health
+```
+
+**已发布镜像：**
 
 ```bash
 docker run --rm -p 9966:9966 \
@@ -28,7 +40,14 @@ docker run --rm -p 9966:9966 \
   ghcr.io/iweidujiang/spring-insight-server:0.1.0
 ```
 
-4. 业务侧能解析 `spring-insight-agent-starter:0.1.0`（Central 即可；开发 SNAPSHOT 时再本地 `mvn install`）  
+4. 业务侧解析 `spring-insight-agent-starter:0.1.1-SNAPSHOT`（本工程当前版本；需先本地 install）：
+
+```bash
+cd D:/a-github-project/spring-insight
+mvn -pl spring-insight-agent-starter -am install -DskipTests -Dskip.ui=true
+```
+
+正式环境可改回 Central 的 `0.1.0`。  
 5. 配置 `.env`：
 
 ```bash
@@ -138,7 +157,7 @@ curl -s "http://localhost:8081/actuator/prometheus" | Select-String "spring_insi
 <dependency>
   <groupId>io.github.iweidujiang</groupId>
   <artifactId>spring-insight-agent-starter</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -157,9 +176,9 @@ spring:
 
 - 构建 context 为本仓库根目录；通用脚本为 `Dockerfile.service`。  
 - 通过 Compose `additional_contexts.m2repo` 注入本机 Maven 仓库，从而解析 `spring-insight-agent-starter`。  
-- **本 compose 不再包含 insight-server**；请用 GHCR 镜像或 jar 单独启动。
+- **本 compose 不再包含 insight-server**；开发用 `compose.dev.yaml`，或用 GHCR / jar 单独启动。
 
 ## 说明
 
 - **存储只在 insight-server**：不要把 `spring.insight.server.storage.*` 写到各微服务。业务侧只需 `server-url`。  
-- 升级 Agent：Central 升版本或本地 `mvn install` 后重建本 Demo 镜像即可。
+- 升级 Agent：改 `spring.insight.version` 后本地 `mvn install`，再重建本 Demo 镜像即可。
