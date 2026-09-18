@@ -40,14 +40,14 @@ docker run --rm -p 9966:9966 \
   ghcr.io/iweidujiang/spring-insight-server:0.1.0
 ```
 
-4. 业务侧解析 `spring-insight-agent-starter:0.1.1-SNAPSHOT`（本工程当前版本；需先本地 install）：
+4. 业务侧解析 `spring-insight-agent-starter:0.3.0-SNAPSHOT`（本工程当前版本；需先本地 install）：
 
 ```bash
 cd D:/a-github-project/spring-insight
 mvn -pl spring-insight-agent-starter -am install -DskipTests -Dskip.ui=true
 ```
 
-正式环境可改回 Central 的 `0.1.0`。  
+正式环境可改回 Central 已发布版本。  
 5. 配置 `.env`：
 
 ```bash
@@ -60,6 +60,7 @@ cp .env.example .env
 |------|------|
 | `MAVEN_REPO` | Maven **localRepository**（构建镜像时注入，解析 Starter） |
 | `INSIGHT_SERVER_URL` | 容器内上报地址，默认 `http://host.docker.internal:9966` |
+| `INSIGHT_INGEST_TOKEN` | 与 Server `ingest-token` 一致；Server 开启上报鉴权时必填（`compose.dev` 默认 `change-me`） |
 | `DOCKER_NETWORK` | 与 Nacos 相同的外部网络（默认 `my-network`） |
 | `NACOS_SERVER_ADDR` | 容器内地址（默认 `nacos-standalone:8848`） |
 
@@ -109,6 +110,8 @@ docker compose --env-file .env --env-file .env.ports --profile traffic up -d
 | **Insight 控制台**（外部） | http://localhost:9966/ |
 | 业务网关 | http://localhost:8080/ |
 | 造数 | `curl "http://localhost:8080/order/create?userId=1&productId=1"` |
+| RestTemplate 造数 | `curl "http://localhost:8080/order/ping-rt?productId=1"`（CLIENT `component=RestTemplate`，`remoteService=sca-product`） |
+| RestClient 造数 | `curl "http://localhost:8080/order/ping-rc?productId=1"`（CLIENT `component=RestClient`；直连时 remoteService 为 host） |
 | 外部 Nacos | http://localhost:38848/nacos |
 
 ```bash

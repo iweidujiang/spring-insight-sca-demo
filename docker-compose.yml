@@ -19,6 +19,8 @@ x-sca-env: &sca-env
   SPRING_CLOUD_NACOS_DISCOVERY_PASSWORD: ${NACOS_PASSWORD:-nacOsdev316}
   # 覆盖 application-docker.yml；指向外部已启动的 insight-server
   SPRING_INSIGHT_SERVER_URL: ${INSIGHT_SERVER_URL:-http://host.docker.internal:9966}
+  # 与 compose.dev.yaml 默认 ingest-token 对齐；Server 未开鉴权时可留空
+  SPRING_INSIGHT_INGEST_TOKEN: ${INSIGHT_INGEST_TOKEN:-change-me}
 
 x-service-build: &service-build
   context: .
