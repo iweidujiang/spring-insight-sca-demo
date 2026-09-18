@@ -112,6 +112,7 @@ docker compose --env-file .env --env-file .env.ports --profile traffic up -d
 | 造数 | `curl "http://localhost:8080/order/create?userId=1&productId=1"` |
 | RestTemplate 造数 | `curl "http://localhost:8080/order/ping-rt?productId=1"`（CLIENT `component=RestTemplate`，`remoteService=sca-product`） |
 | RestClient 造数 | `curl "http://localhost:8080/order/ping-rc?productId=1"`（CLIENT `component=RestClient`；直连时 remoteService 为 host） |
+| 告警 Webhook 收件箱 | `POST /insight-alert/webhook`（网关或 order）；查看：`curl http://localhost:8080/insight-alert/recent` |
 | 外部 Nacos | http://localhost:38848/nacos |
 
 ```bash

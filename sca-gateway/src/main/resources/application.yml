@@ -18,6 +18,10 @@ spring:
               uri: lb://sca-order
               predicates:
                 - Path=/order/**
+            - id: insight-alert-webhook
+              uri: lb://sca-order
+              predicates:
+                - Path=/insight-alert/**
             - id: product-service
               uri: lb://sca-product
               predicates:
@@ -31,7 +35,27 @@ spring:
               predicates:
                 - Path=/loyalty/**
   insight:
+    enabled: true
     server-url: http://localhost:9966
+    ingest-token: change-me
+    sample-rate: 1.0
+    http-tracing-enabled: true
+    context-propagation-enabled: true
+    micrometer-enabled: true
+    diagnostic-logs: true
+    jvm-metrics:
+      enabled: true
+    db-metrics:
+      enabled: true
 
 server:
   port: 18080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  metrics:
+    tags:
+      application: ${spring.application.name}

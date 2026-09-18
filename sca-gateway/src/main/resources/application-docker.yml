@@ -9,7 +9,24 @@ spring:
         username: nacos
         password: nacOsdev316
   insight:
+    enabled: true
     server-url: http://host.docker.internal:9966
+    ingest-token: change-me
+    sample-rate: 1.0
+    http-tracing-enabled: true
+    context-propagation-enabled: true
+    micrometer-enabled: true
+    diagnostic-logs: true
+    jvm-metrics:
+      enabled: true
+    db-metrics:
+      enabled: true
 
 server:
   address: 0.0.0.0
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
