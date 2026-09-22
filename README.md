@@ -37,17 +37,18 @@ docker run --rm -p 9966:9966 \
   -e SPRING_INSIGHT_SERVER_STORAGE_MODE=file \
   -e SPRING_INSIGHT_SERVER_STORAGE_FILE_PATH=/data/spans.json \
   -v spring-insight-data:/data \
-  ghcr.io/iweidujiang/spring-insight-server:0.1.0
+  ghcr.io/iweidujiang/spring-insight-server:0.3.2
 ```
 
-4. 业务侧解析 `spring-insight-agent-starter:0.3.0-SNAPSHOT`（本工程当前版本；需先本地 install）：
+4. 业务侧解析 `spring-insight-agent-starter:0.4.0-SNAPSHOT`（本工程当前版本；需先本地 install）：
 
 ```bash
 cd D:/a-github-project/spring-insight
+git checkout main
 mvn -pl spring-insight-agent-starter -am install -DskipTests -Dskip.ui=true
 ```
 
-正式环境可改回 Central 已发布版本。  
+正式环境可改回 Central 已发布版本（发版后将本仓 `spring.insight.version` 改为对应正式号）。  
 5. 配置 `.env`：
 
 ```bash
@@ -161,7 +162,7 @@ curl -s "http://localhost:8081/actuator/prometheus" | Select-String "spring_insi
 <dependency>
   <groupId>io.github.iweidujiang</groupId>
   <artifactId>spring-insight-agent-starter</artifactId>
-  <version>0.1.1-SNAPSHOT</version>
+  <version>0.4.0-SNAPSHOT</version>
 </dependency>
 ```
 
