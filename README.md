@@ -40,15 +40,16 @@ docker run --rm -p 9966:9966 \
   ghcr.io/iweidujiang/spring-insight-server:0.3.2
 ```
 
-4. 业务侧解析 `spring-insight-agent-starter:0.4.0-SNAPSHOT`（本工程当前版本；需先本地 install）：
+4. 业务侧解析 `spring-insight-agent-starter:0.3.2`（与 Insight `agent.version` 对齐；可直接从 Maven Central 拉取）：
 
 ```bash
-cd D:/a-github-project/spring-insight
-git checkout main
-mvn -pl spring-insight-agent-starter -am install -DskipTests -Dskip.ui=true
+# 仅当本地改过 Agent 时才需要：
+# cd D:/a-github-project/spring-insight
+# git checkout main
+# mvn -pl spring-insight-agent-starter -am install -DskipTests -Dskip.ui=true
 ```
 
-正式环境可改回 Central 已发布版本（发版后将本仓 `spring.insight.version` 改为对应正式号）。  
+正式环境使用 Central 已发布版本即可。  
 5. 配置 `.env`：
 
 ```bash
@@ -162,7 +163,7 @@ curl -s "http://localhost:8081/actuator/prometheus" | Select-String "spring_insi
 <dependency>
   <groupId>io.github.iweidujiang</groupId>
   <artifactId>spring-insight-agent-starter</artifactId>
-  <version>0.4.0-SNAPSHOT</version>
+  <version>0.3.2</version>
 </dependency>
 ```
 
