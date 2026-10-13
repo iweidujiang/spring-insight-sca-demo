@@ -18,4 +18,16 @@ public interface UserFeignClient {
     Integer addScore(@RequestParam("id") Long id,
                      @RequestParam("lastScore") Integer lastScore,
                      @RequestParam("addScore") Integer addScore);
+
+    /** JDBC 慢查询造数（sca-user H2） */
+    @GetMapping("/user/jdbc/slow")
+    String jdbcSlow(@RequestParam(value = "ms", defaultValue = "600") long ms);
+
+    /** JDBC 错误造数 */
+    @GetMapping("/user/jdbc/error")
+    String jdbcError();
+
+    /** JDBC 快查询造数 */
+    @GetMapping("/user/jdbc/fast")
+    String jdbcFast();
 }

@@ -114,6 +114,9 @@ docker compose --env-file .env --env-file .env.ports --profile traffic up -d
 | 造数 | `curl "http://localhost:8080/order/create?userId=1&productId=1"` |
 | RestTemplate 造数 | `curl "http://localhost:8080/order/ping-rt?productId=1"`（CLIENT `component=RestTemplate`，`remoteService=sca-product`） |
 | RestClient 造数 | `curl "http://localhost:8080/order/ping-rc?productId=1"`（CLIENT `component=RestClient`；直连时 remoteService 为 host） |
+| JDBC 慢查询 | `curl "http://localhost:8080/order/jdbc-slow?ms=600"`（order→user H2；见下文） |
+| JDBC 错误 | `curl "http://localhost:8080/order/jdbc-error"` |
+| JDBC 快查询 | `curl "http://localhost:8080/order/jdbc-fast"`（默认阈值下无 JDBC Span） |
 | 告警 Webhook 收件箱 | `POST /insight-alert/webhook`（网关或 order）；查看：`curl http://localhost:8080/insight-alert/recent` |
 | 外部 Nacos | http://localhost:38848/nacos |
 
@@ -124,6 +127,37 @@ curl -sS "http://localhost:9966/api/v1/ui/dependencies"
 ```
 
 造数后约等 5 秒（Agent 异步批量上报）再刷新控制台。
+
+### JDBC 追踪（sca-user 内置 H2）
+
+**前置**：本地先 install 带 JDBC 的 Boot3 Agent（Central 尚未含该能力时）：
+
+```powershell
+cd D:\a-github-project\spring-insight
+git checkout main
+mvn -pl spring-insight-agent-starter -am install "-DskipTests" "-Dskip.ui=true"
+```
+
+本工程父 POM `spring.insight.agent.version=0.5.0`；**sca-user** 开启：
+
+```yaml
+spring.insight.jdbc-tracing-enabled: true
+spring.insight.jdbc-slow-threshold-ms: 500
+```
+
+种子表 `demo_item`（widget-a/b/c，stock 100/50/0）。推荐经网关→order→user，便于看完整瀑布：
+
+| 场景 | 命令 | 期望（user 侧） |
+|------|------|----------------|
+| 慢 SQL | `curl "http://localhost:8080/order/jdbc-slow?ms=600"` | CLIENT/`JDBC`，耗时 ≥600ms，`db.slow=true` |
+| 错误 | `curl "http://localhost:8080/order/jdbc-error"` | JDBC Span `ERROR` / `SQL_ERROR` |
+| 快 SELECT | `curl "http://localhost:8080/order/jdbc-fast"` | **无** JDBC Span（成功且 &lt;500ms） |
+
+也可直连 user：`http://localhost:18083/user/jdbc/slow`（IDE 启动时端口）或 Docker 映射后的 order 端口下同路径。  
+成功全报：user yml 设 `jdbc-slow-threshold-ms: 0` 后重启再打 `/jdbc-fast`。
+
+拓扑被调方应为短名 `h2:mem:sca_user_demo`（不是整段 `jdbc:h2:mem:…`）。点进该节点会按**外部依赖**展示指向它的 CLIENT Span。  
+若链路列表为空：检查筛选是否还停在某个服务/库名上——清空服务筛选即可；仪表盘「链路总数」实际统计的是 Span 条数。
 
 ## 端口
 
@@ -163,7 +197,7 @@ curl -s "http://localhost:8081/actuator/prometheus" | Select-String "spring_insi
 <dependency>
   <groupId>io.github.iweidujiang</groupId>
   <artifactId>spring-insight-agent-starter</artifactId>
-  <version>0.3.2</version>
+  <version>0.5.0</version>
 </dependency>
 ```
 
@@ -174,6 +208,7 @@ spring:
   insight:
     server-url: http://localhost:9966
     # Docker profile 默认 host.docker.internal:9966，可由 INSIGHT_SERVER_URL 覆盖
+    # JDBC 追踪仅需在真正访问 DataSource 的服务打开（本工程为 sca-user）
 ```
 
 无需 `@EnableSpringInsight`。

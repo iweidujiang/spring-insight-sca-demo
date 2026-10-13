@@ -86,4 +86,28 @@ public class OrderController {
         return "rc-price=" + price;
     }
 
+    /**
+     * 跨服务 JDBC 慢查询：order → Feign → user H2；瀑布应含 JDBC CLIENT。
+     */
+    @GetMapping("/jdbc-slow")
+    public String jdbcSlow(@RequestParam(value = "ms", defaultValue = "600") long ms) {
+        return "order-jdbc-slow: " + userFeignClient.jdbcSlow(ms);
+    }
+
+    /**
+     * 跨服务 JDBC 错误造数。
+     */
+    @GetMapping("/jdbc-error")
+    public String jdbcError() {
+        return "order-jdbc-error: " + userFeignClient.jdbcError();
+    }
+
+    /**
+     * 跨服务快查询：默认阈值下 user 侧不应出现 JDBC Span。
+     */
+    @GetMapping("/jdbc-fast")
+    public String jdbcFast() {
+        return "order-jdbc-fast: " + userFeignClient.jdbcFast();
+    }
+
 }

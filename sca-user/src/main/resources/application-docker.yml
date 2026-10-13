@@ -12,11 +12,11 @@ spring:
     sample-rate: 1.0
     http-tracing-enabled: true
     context-propagation-enabled: true
+    jdbc-tracing-enabled: true
+    jdbc-slow-threshold-ms: 500
     micrometer-enabled: true
     diagnostic-logs: true
     jvm-metrics:
-      enabled: true
-    db-metrics:
       enabled: true
 
 server:
