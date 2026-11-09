@@ -37,19 +37,20 @@ docker run --rm -p 9966:9966 \
   -e SPRING_INSIGHT_SERVER_STORAGE_MODE=file \
   -e SPRING_INSIGHT_SERVER_STORAGE_FILE_PATH=/data/spans.json \
   -v spring-insight-data:/data \
-  ghcr.io/iweidujiang/spring-insight-server:0.3.2
+  ghcr.io/iweidujiang/spring-insight-server:1.2.0
 ```
 
-4. 业务侧解析 `spring-insight-agent-starter:0.3.2`（与 Insight `agent.version` 对齐；可直接从 Maven Central 拉取）：
+> 开发测 JVM 曲线时请用本机 `compose.dev.yaml` 起的 Server SNAPSHOT（含 JVM 接收接口），不要用过旧的 GHCR tag。
 
-```bash
-# 仅当本地改过 Agent 时才需要：
-# cd D:/a-github-project/spring-insight
-# git checkout main
-# mvn -pl spring-insight-agent-starter -am install -DskipTests -Dskip.ui=true
+4. 业务侧解析 `spring-insight-agent-starter:0.6.0`（与 Insight `agent.version` 对齐）。**0.6.0 未上 Central 前**需先本地 install：
+
+```powershell
+cd D:/a-github-project/spring-insight
+git checkout main
+mvn -pl spring-insight-agent-starter -am install "-DskipTests" "-Dskip.ui=true"
 ```
 
-正式环境使用 Central 已发布版本即可。  
+正式环境待 Central 发布后可直接拉依赖。  
 5. 配置 `.env`：
 
 ```bash
@@ -130,15 +131,7 @@ curl -sS "http://localhost:9966/api/v1/ui/dependencies"
 
 ### JDBC 追踪（sca-user 内置 H2）
 
-**前置**：本地先 install 带 JDBC 的 Boot3 Agent（Central 尚未含该能力时）：
-
-```powershell
-cd D:\a-github-project\spring-insight
-git checkout main
-mvn -pl spring-insight-agent-starter -am install "-DskipTests" "-Dskip.ui=true"
-```
-
-本工程父 POM `spring.insight.agent.version=0.5.0`；**sca-user** 开启：
+本工程父 POM `spring.insight.agent.version=0.6.0`；**sca-user** 开启：
 
 ```yaml
 spring.insight.jdbc-tracing-enabled: true
@@ -197,7 +190,7 @@ curl -s "http://localhost:8081/actuator/prometheus" | Select-String "spring_insi
 <dependency>
   <groupId>io.github.iweidujiang</groupId>
   <artifactId>spring-insight-agent-starter</artifactId>
-  <version>0.5.0</version>
+  <version>0.6.0</version>
 </dependency>
 ```
 
@@ -209,9 +202,41 @@ spring:
     server-url: http://localhost:9966
     # Docker profile 默认 host.docker.internal:9966，可由 INSIGHT_SERVER_URL 覆盖
     # JDBC 追踪仅需在真正访问 DataSource 的服务打开（本工程为 sca-user）
+    jvm-metrics:
+      enabled: true   # 0.6.0：上报堆/GC/线程；服务详情页可看曲线
 ```
 
 无需 `@EnableSpringInsight`。
+
+## 联调测试步骤（Agent 0.6.0 + 本机 Server）
+
+1. **安装本地 Agent 0.6.0**（见上文 `mvn … install`）。  
+2. **启动 Server**（含 JVM 接收）：
+
+```powershell
+cd D:\a-github-project\spring-insight
+mvn -pl insight-server -am package "-DskipTests"
+docker compose -f compose.dev.yaml up -d --build
+curl -sS http://localhost:9966/api/v1/health
+```
+
+3. **启动 Demo**（Nacos 已就绪）：IDE 按 loyalty → product → user → order → gateway，或 `.\scripts\docker-up.ps1 -Build`。  
+4. **造流量**（约等 5～10 秒让 Agent 批量上报）：
+
+```powershell
+curl "http://localhost:8080/order/create?userId=1&productId=1"
+curl "http://localhost:8080/order/ping-rt?productId=1"
+curl "http://localhost:8080/order/jdbc-slow?ms=600"
+```
+
+5. **控制台核对**：打开 http://localhost:9966/  
+   - 仪表盘 / 拓扑有 `sca-order`、`sca-user` 等  
+   - 链路列表能打开瀑布  
+6. **JVM 曲线**（需 `jvm-metrics.enabled=true`，本工程各服务已开）：  
+   - 控制台进入 **服务详情**（如 `sca-order`）  
+   - 应看到「JVM 运行时」堆 / GC / 线程图  
+   - 或 API：`curl -sS "http://localhost:9966/api/v1/ui/services/sca-order/jvm-metrics?hours=24"`，`found` 应为 `true`  
+7. **可选 Micrometer**：`curl -s "http://localhost:8081/actuator/prometheus" | Select-String "spring_insight"`
 
 ## Docker 构建说明
 
