@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 与 boot2-demo 对齐的 JDBC 造数入口（根路径），经网关可直接打 {@code /call-jdbc-*}。
+ * JDBC 造数入口（根路径），经网关可直接打 {@code /call-jdbc-*}。
  * <p>
  * 内部仍走 Feign → sca-user H2；等价于 {@code /order/jdbc-*}。
  * </p>
