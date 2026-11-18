@@ -115,9 +115,9 @@ docker compose --env-file .env --env-file .env.ports --profile traffic up -d
 | 造数 | `curl "http://localhost:8080/order/create?userId=1&productId=1"` |
 | RestTemplate 造数 | `curl "http://localhost:8080/order/ping-rt?productId=1"`（CLIENT `component=RestTemplate`，`remoteService=sca-product`） |
 | RestClient 造数 | `curl "http://localhost:8080/order/ping-rc?productId=1"`（CLIENT `component=RestClient`；直连时 remoteService 为 host） |
-| JDBC 慢查询 | `curl "http://localhost:8080/order/jdbc-slow?ms=600"`（order→user H2；见下文） |
-| JDBC 错误 | `curl "http://localhost:8080/order/jdbc-error"` |
-| JDBC 快查询 | `curl "http://localhost:8080/order/jdbc-fast"`（默认阈值下无 JDBC Span） |
+| JDBC 慢查询 | `curl "http://localhost:8080/call-jdbc-slow?ms=600"`（order→user H2；亦支持 `/order/jdbc-slow`） |
+| JDBC 错误 | `curl "http://localhost:8080/call-jdbc-error"`（亦支持 `/order/jdbc-error`） |
+| JDBC 快查询 | `curl "http://localhost:8080/call-jdbc-fast"`（默认阈值下无 JDBC Span） |
 | 告警 Webhook 收件箱 | `POST /insight-alert/webhook`（网关或 order）；查看：`curl http://localhost:8080/insight-alert/recent` |
 | 外部 Nacos | http://localhost:38848/nacos |
 
@@ -142,9 +142,9 @@ spring.insight.jdbc-slow-threshold-ms: 500
 
 | 场景 | 命令 | 期望（user 侧） |
 |------|------|----------------|
-| 慢 SQL | `curl "http://localhost:8080/order/jdbc-slow?ms=600"` | CLIENT/`JDBC`，耗时 ≥600ms，`db.slow=true` |
-| 错误 | `curl "http://localhost:8080/order/jdbc-error"` | JDBC Span `ERROR` / `SQL_ERROR` |
-| 快 SELECT | `curl "http://localhost:8080/order/jdbc-fast"` | **无** JDBC Span（成功且 &lt;500ms） |
+| 慢 SQL | `curl "http://localhost:8080/call-jdbc-slow?ms=600"` | CLIENT/`JDBC`，耗时 ≥600ms，`db.slow=true` |
+| 错误 | `curl "http://localhost:8080/call-jdbc-error"` | JDBC Span `ERROR` / `SQL_ERROR` |
+| 快 SELECT | `curl "http://localhost:8080/call-jdbc-fast"` | **无** JDBC Span（成功且 &lt;500ms） |
 
 也可直连 user：`http://localhost:18083/user/jdbc/slow`（IDE 启动时端口）或 Docker 映射后的 order 端口下同路径。  
 成功全报：user yml 设 `jdbc-slow-threshold-ms: 0` 后重启再打 `/jdbc-fast`。
@@ -226,7 +226,7 @@ curl -sS http://localhost:9966/api/v1/health
 ```powershell
 curl "http://localhost:8080/order/create?userId=1&productId=1"
 curl "http://localhost:8080/order/ping-rt?productId=1"
-curl "http://localhost:8080/order/jdbc-slow?ms=600"
+curl "http://localhost:8080/call-jdbc-slow?ms=600"
 ```
 
 5. **控制台核对**：打开 http://localhost:9966/  

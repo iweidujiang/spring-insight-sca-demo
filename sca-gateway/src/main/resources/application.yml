@@ -18,6 +18,10 @@ spring:
               uri: lb://sca-order
               predicates:
                 - Path=/order/**
+            - id: order-call-jdbc
+              uri: lb://sca-order
+              predicates:
+                - Path=/call-jdbc-**
             - id: insight-alert-webhook
               uri: lb://sca-order
               predicates:
