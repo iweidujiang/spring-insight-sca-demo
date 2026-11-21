@@ -31,7 +31,8 @@
         <spring.boot.version>3.5.9</spring.boot.version>
         <spring.cloud.version>2025.0.0</spring.cloud.version>
         <spring.cloud.alibaba.version>2025.0.0.0</spring.cloud.alibaba.version>
-        <spring.insight.agent.version>0.6.0</spring.insight.agent.version>
+        <!-- 本地联调：先在 spring-insight 仓 mvn install 本号 Agent -->
+        <spring.insight.agent.version>0.7.0-SNAPSHOT</spring.insight.agent.version>
     </properties>
 
     <dependencyManagement>

@@ -31,6 +31,10 @@ spring:
     diagnostic-logs: true
     jvm-metrics:
       enabled: true
+    # 存活心跳（联调缩短间隔；默认也可不写，Agent 默认 60s）
+    heartbeat:
+      enabled: true
+      interval-ms: 10000
 
 server:
   port: 18083
