@@ -110,4 +110,46 @@ public class OrderController {
         return "order-jdbc-fast: " + userFeignClient.jdbcFast();
     }
 
+    /**
+     * 跨服务 Redis 多命令造数：order → Feign → user Redis。
+     */
+    @GetMapping("/redis-mix")
+    public String redisMix(@RequestParam(value = "key", defaultValue = "mix") String key) {
+        return "order-redis-mix: " + userFeignClient.redisMix(key);
+    }
+
+    /**
+     * 跨服务 Redis GET。
+     */
+    @GetMapping("/redis-get")
+    public String redisGet(@RequestParam(value = "key", defaultValue = "item") String key) {
+        return "order-redis-get: " + userFeignClient.redisGet(key);
+    }
+
+    /**
+     * 跨服务 Redis SET。
+     */
+    @GetMapping("/redis-set")
+    public String redisSet(
+            @RequestParam(value = "key", defaultValue = "item") String key,
+            @RequestParam(value = "value", defaultValue = "demo") String value) {
+        return "order-redis-set: " + userFeignClient.redisSet(key, value);
+    }
+
+    /**
+     * 跨服务 Redis HGET。
+     */
+    @GetMapping("/redis-hget")
+    public String redisHget(@RequestParam(value = "key", defaultValue = "cart") String key) {
+        return "order-redis-hget: " + userFeignClient.redisHget(key);
+    }
+
+    /**
+     * 跨服务 Redis 错误造数（WRONGTYPE）。
+     */
+    @GetMapping("/redis-error")
+    public String redisError(@RequestParam(value = "key", defaultValue = "wrongtype") String key) {
+        return "order-redis-error: " + userFeignClient.redisError(key);
+    }
+
 }

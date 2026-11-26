@@ -42,7 +42,7 @@ docker run --rm -p 9966:9966 \
 
 > 开发测 JVM 曲线时请用本机 `compose.dev.yaml` 起的 Server SNAPSHOT（含 JVM 接收接口），不要用过旧的 GHCR tag。
 
-4. 业务侧解析 `spring-insight-agent-starter:0.6.0`（与 Insight `agent.version` 对齐）。**0.6.0 未上 Central 前**需先本地 install：
+4. 业务侧解析 `spring-insight-agent-starter:0.7.1-SNAPSHOT`（与 Insight `agent.version` 对齐）。SNAPSHOT 需先本地 install：
 
 ```powershell
 cd D:/a-github-project/spring-insight
@@ -50,7 +50,7 @@ git checkout main
 mvn -pl spring-insight-agent-starter -am install "-DskipTests" "-Dskip.ui=true"
 ```
 
-正式环境待 Central 发布后可直接拉依赖。  
+正式环境可用已发布的 Central 版；联调未发版能力时用本号 SNAPSHOT。  
 5. 配置 `.env`：
 
 ```bash
@@ -118,6 +118,8 @@ docker compose --env-file .env --env-file .env.ports --profile traffic up -d
 | JDBC 慢查询 | `curl "http://localhost:8080/call-jdbc-slow?ms=600"`（order→user H2；亦支持 `/order/jdbc-slow`） |
 | JDBC 错误 | `curl "http://localhost:8080/call-jdbc-error"`（亦支持 `/order/jdbc-error`） |
 | JDBC 快查询 | `curl "http://localhost:8080/call-jdbc-fast"`（默认阈值下无 JDBC Span） |
+| Redis 多命令 | `curl "http://localhost:8080/call-redis-mix"`（order→user Redis；亦支持 `/order/redis-mix`） |
+| Redis GET / SET / HGET | `curl "http://localhost:8080/call-redis-get"` 等；错误：`/call-redis-error` |
 | 告警 Webhook 收件箱 | `POST /insight-alert/webhook`（网关或 order）；查看：`curl http://localhost:8080/insight-alert/recent` |
 | 外部 Nacos | http://localhost:38848/nacos |
 
@@ -131,7 +133,7 @@ curl -sS "http://localhost:9966/api/v1/ui/dependencies"
 
 ### JDBC 追踪（sca-user 内置 H2）
 
-本工程父 POM `spring.insight.agent.version=0.6.0`；**sca-user** 开启：
+本工程父 POM `spring.insight.agent.version=0.7.1-SNAPSHOT`；**sca-user** 开启：
 
 ```yaml
 spring.insight.jdbc-tracing-enabled: true
@@ -152,6 +154,28 @@ spring.insight.jdbc-slow-threshold-ms: 500
 拓扑被调方应为短名 `h2:mem:sca_user_demo`（不是整段 `jdbc:h2:mem:…`）。点进该节点会按**外部依赖**展示指向它的 CLIENT Span。  
 若链路列表为空：检查筛选是否还停在某个服务/库名上——清空服务筛选即可；仪表盘「链路总数」实际统计的是 Span 条数。
 
+### Redis 追踪（sca-user → Redis）
+
+**sca-user** 依赖 `spring-boot-starter-data-redis`，并开启：
+
+```yaml
+spring.insight.redis-tracing-enabled: true
+spring.insight.redis-slow-threshold-ms: 0   # 造数时成功命令也上报，便于缓存页「按命令」
+```
+
+Compose 已带 `redis:7-alpine`（宿主机默认 `6379`）；IDE 本地请先起 Redis，或改 `spring.data.redis.*`。
+
+| 场景 | 命令 | 期望（user 侧） |
+|------|------|----------------|
+| 多命令 | `curl "http://localhost:8080/call-redis-mix"` | SET / GET / HSET / HGET / INCR / DEL 等多条 REDIS Span |
+| GET | `curl "http://localhost:8080/call-redis-get"` | REDIS GET |
+| SET | `curl "http://localhost:8080/call-redis-set"` | REDIS SET |
+| HGET | `curl "http://localhost:8080/call-redis-hget"` | HSET + HGET |
+| 错误 | `curl "http://localhost:8080/call-redis-error"` | HGET WRONGTYPE → ERROR |
+
+约 5 秒后打开控制台 **缓存** 页：KPI 有数据，「按命令」可见 GET/SET/HGET 分布。  
+快捷脚本：`scripts/redis-verify.ps1`。
+
 ## 端口
 
 | 服务 | 宿主机默认 | 环境变量 | 说明 |
@@ -159,6 +183,7 @@ spring.insight.jdbc-slow-threshold-ms: 500
 | insight-server（外部） | 9966 | — | 本 compose 不管理 |
 | sca-gateway | 8080 | `GATEWAY_HOST_PORT` | 业务入口 |
 | sca-order | 8081 | `ORDER_HOST_PORT` | 可直连 |
+| redis（compose） | 6379 | `REDIS_HOST_PORT` | sca-user 缓存造数 |
 | nacos-standalone（外部） | 38848 等 | — | 本机自行维护 |
 
 容器内端口不变（gateway `18080`、order `18081` 等）；仅映射到本机的端口可换。
@@ -190,7 +215,7 @@ curl -s "http://localhost:8081/actuator/prometheus" | Select-String "spring_insi
 <dependency>
   <groupId>io.github.iweidujiang</groupId>
   <artifactId>spring-insight-agent-starter</artifactId>
-  <version>0.6.0</version>
+  <version>0.7.1-SNAPSHOT</version>
 </dependency>
 ```
 
@@ -201,16 +226,16 @@ spring:
   insight:
     server-url: http://localhost:9966
     # Docker profile 默认 host.docker.internal:9966，可由 INSIGHT_SERVER_URL 覆盖
-    # JDBC 追踪仅需在真正访问 DataSource 的服务打开（本工程为 sca-user）
+    # JDBC / Redis 追踪仅需在真正访问库/缓存的服务打开（本工程为 sca-user）
     jvm-metrics:
-      enabled: true   # 0.6.0：上报堆/GC/线程；服务详情页可看曲线
+      enabled: true   # 上报堆/GC/线程；服务详情页可看曲线
 ```
 
 无需 `@EnableSpringInsight`。
 
-## 联调测试步骤（Agent 0.6.0 + 本机 Server）
+## 联调测试步骤（Agent SNAPSHOT + 本机 Server）
 
-1. **安装本地 Agent 0.6.0**（见上文 `mvn … install`）。  
+1. **安装本地 Agent**（见上文 `mvn … install`，版本与父 POM `spring.insight.agent.version` 一致）。  
 2. **启动 Server**（含 JVM 接收）：
 
 ```powershell
@@ -227,11 +252,13 @@ curl -sS http://localhost:9966/api/v1/health
 curl "http://localhost:8080/order/create?userId=1&productId=1"
 curl "http://localhost:8080/order/ping-rt?productId=1"
 curl "http://localhost:8080/call-jdbc-slow?ms=600"
+curl "http://localhost:8080/call-redis-mix"
 ```
 
 5. **控制台核对**：打开 http://localhost:9966/  
    - 仪表盘 / 拓扑有 `sca-order`、`sca-user` 等  
    - 链路列表能打开瀑布  
+   - **缓存**页「按命令」可见 GET / SET / HGET 等（需 Redis 已起）  
 6. **JVM 曲线**（需 `jvm-metrics.enabled=true`，本工程各服务已开）：  
    - 控制台进入 **服务详情**（如 `sca-order`）  
    - 应看到「JVM 运行时」堆 / GC / 线程图  

@@ -30,6 +30,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Redis 追踪造数：需本机或 compose 中的 Redis -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
         <!-- Nacos Discovery -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>

@@ -22,6 +22,10 @@ spring:
               uri: lb://sca-order
               predicates:
                 - Path=/call-jdbc-**
+            - id: order-call-redis
+              uri: lb://sca-order
+              predicates:
+                - Path=/call-redis-**
             - id: insight-alert-webhook
               uri: lb://sca-order
               predicates:

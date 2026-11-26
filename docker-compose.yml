@@ -31,6 +31,12 @@ x-service-build: &service-build
     MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
 
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_HOST_PORT:-6379}:6379"
+    networks: [demo-net]
+
   sca-product:
     build:
       <<: *service-build
@@ -66,9 +72,13 @@ services:
         SERVER_PORT: "18083"
     environment:
       <<: *sca-env
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
+      redis:
+        condition: service_started
       sca-loyalty:
         condition: service_started
     networks: [demo-net]

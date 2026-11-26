@@ -1,0 +1,15 @@
+﻿# Redis 追踪造数（SCA demo）。需 Redis + 网关/order/user + insight-server；宿主机网关默认 8080
+$ErrorActionPreference = "Stop"
+$base = if ($env:GATEWAY_BASE) { $env:GATEWAY_BASE } else { "http://localhost:8080" }
+Write-Host "Gateway base: $base"
+curl.exe -sS "$base/call-redis-mix"
+Write-Host ""
+curl.exe -sS "$base/call-redis-get"
+Write-Host ""
+curl.exe -sS "$base/call-redis-set?key=item&value=demo"
+Write-Host ""
+curl.exe -sS "$base/call-redis-hget"
+Write-Host ""
+curl.exe -sS "$base/call-redis-error"
+Write-Host ""
+Write-Host "约 5 秒后打开 http://localhost:9966/redis ：「按命令」应见 GET/SET/HGET 等；user 侧 REDIS Span"

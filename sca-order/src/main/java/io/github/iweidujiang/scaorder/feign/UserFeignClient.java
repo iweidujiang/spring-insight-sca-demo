@@ -30,4 +30,25 @@ public interface UserFeignClient {
     /** JDBC 快查询造数 */
     @GetMapping("/user/jdbc/fast")
     String jdbcFast();
+
+    /** Redis 多命令造数（sca-user） */
+    @GetMapping("/user/redis/mix")
+    String redisMix(@RequestParam(value = "key", defaultValue = "mix") String key);
+
+    /** Redis GET 造数 */
+    @GetMapping("/user/redis/get")
+    String redisGet(@RequestParam(value = "key", defaultValue = "item") String key);
+
+    /** Redis SET 造数 */
+    @GetMapping("/user/redis/set")
+    String redisSet(@RequestParam(value = "key", defaultValue = "item") String key,
+                    @RequestParam(value = "value", defaultValue = "demo") String value);
+
+    /** Redis HGET 造数 */
+    @GetMapping("/user/redis/hget")
+    String redisHget(@RequestParam(value = "key", defaultValue = "cart") String key);
+
+    /** Redis 错误造数（WRONGTYPE） */
+    @GetMapping("/user/redis/error")
+    String redisError(@RequestParam(value = "key", defaultValue = "wrongtype") String key);
 }

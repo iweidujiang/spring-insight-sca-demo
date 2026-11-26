@@ -11,6 +11,11 @@ spring:
       mode: always
       schema-locations: classpath:schema.sql
       data-locations: classpath:data.sql
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      timeout: 2s
   cloud:
     nacos:
       discovery:
@@ -27,6 +32,9 @@ spring:
     # JDBC 追踪（包装 DataSource）；错误始终上报，成功仅慢 SQL
     jdbc-tracing-enabled: true
     jdbc-slow-threshold-ms: 500
+    # Redis 追踪：造数要看见 GET/SET/HGET 等命令分布，成功也上报
+    redis-tracing-enabled: true
+    redis-slow-threshold-ms: 0
     micrometer-enabled: true
     diagnostic-logs: true
     jvm-metrics:

@@ -1,4 +1,9 @@
 spring:
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      timeout: 2s
   cloud:
     nacos:
       discovery:
@@ -14,6 +19,8 @@ spring:
     context-propagation-enabled: true
     jdbc-tracing-enabled: true
     jdbc-slow-threshold-ms: 500
+    redis-tracing-enabled: true
+    redis-slow-threshold-ms: 0
     micrometer-enabled: true
     diagnostic-logs: true
     jvm-metrics:
