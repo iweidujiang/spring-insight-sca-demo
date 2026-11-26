@@ -163,7 +163,8 @@ spring.insight.redis-tracing-enabled: true
 spring.insight.redis-slow-threshold-ms: 0   # 造数时成功命令也上报，便于缓存页「按命令」
 ```
 
-Compose 已带 `redis:7-alpine`（宿主机默认映射 `6380→6379`，避免占本机常用 6379）；IDE 本地默认连 `127.0.0.1:6379`，或改 `spring.data.redis.*`。
+Compose 服务名为 **`sca-demo-redis`**（宿主机默认 `6380→6379`，避免占本机 6379，也避免与共享网络上其它 `redis` 撞名）。容器内 sca-user 连 `sca-demo-redis:6379`（无密码）。  
+IDE 本地默认连 `127.0.0.1:6379`；若本机 Redis 有密码，设环境变量 `SPRING_DATA_REDIS_PASSWORD`。
 
 | 场景 | 命令 | 期望（user 侧） |
 |------|------|----------------|
@@ -183,7 +184,7 @@ Compose 已带 `redis:7-alpine`（宿主机默认映射 `6380→6379`，避免�
 | insight-server（外部） | 9966 | — | 本 compose 不管理 |
 | sca-gateway | 8080 | `GATEWAY_HOST_PORT` | 业务入口 |
 | sca-order | 8081 | `ORDER_HOST_PORT` | 可直连 |
-| redis（compose） | 6380 | `REDIS_HOST_PORT` | 容器内仍 6379；宿主机默认 6380 |
+| sca-demo-redis | 6380 | `REDIS_HOST_PORT` | 容器内 6379、无密码；宿主机默认 6380 |
 | nacos-standalone（外部） | 38848 等 | — | 本机自行维护 |
 
 容器内端口不变（gateway `18080`、order `18081` 等）；仅映射到本机的端口可换。

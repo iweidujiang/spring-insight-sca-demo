@@ -1,8 +1,10 @@
 spring:
   data:
     redis:
-      host: ${SPRING_DATA_REDIS_HOST:redis}
+      # 容器内连 compose 的 sca-demo-redis（无密码）；勿写成宿主机映射口 6380
+      host: ${SPRING_DATA_REDIS_HOST:sca-demo-redis}
       port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
       timeout: 2s
   cloud:
     nacos:

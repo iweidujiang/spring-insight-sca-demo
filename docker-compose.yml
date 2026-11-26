@@ -31,8 +31,10 @@ x-service-build: &service-build
     MAVEN_IMAGE: ${MAVEN_IMAGE:-maven:3.9.9-eclipse-temurin-21}
 
 services:
-  redis:
+  # 避免与 my-network 上其它名为 redis、且可能带密码的实例抢 DNS
+  sca-demo-redis:
     image: redis:7-alpine
+    container_name: sca-demo-redis
     ports:
       - "${REDIS_HOST_PORT:-6380}:6379"
     networks: [demo-net]
@@ -72,12 +74,12 @@ services:
         SERVER_PORT: "18083"
     environment:
       <<: *sca-env
-      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_HOST: sca-demo-redis
       SPRING_DATA_REDIS_PORT: "6379"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
-      redis:
+      sca-demo-redis:
         condition: service_started
       sca-loyalty:
         condition: service_started

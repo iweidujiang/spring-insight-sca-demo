@@ -15,6 +15,8 @@ spring:
     redis:
       host: 127.0.0.1
       port: 6379
+      # 本机 Redis 若开启 requirepass，可在环境变量或此处填写
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
       timeout: 2s
   cloud:
     nacos:
